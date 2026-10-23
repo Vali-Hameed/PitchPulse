@@ -93,7 +93,7 @@ sequenceDiagram
     alt Assertion matches ground truth
         Verifier->>Router: Verified Narrative (Confidence: 100%, Status: MATCH)
     else Mismatch / Hallucination Detected
-        Note over Verifier: Replaces 4 with 2; Flags status=CORRECTED in Receipt
+        Note over Verifier: Replaces 4 with 2, flags status=CORRECTED in Receipt
         Verifier->>Router: Auto-Corrected Narrative + Audit Receipt
     end
     Router->>Broadcast: BroadcastOverlayPayload (Analyst / Casual / Vance in EN/ES/AR)
@@ -102,13 +102,13 @@ sequenceDiagram
 
 ### Deterministic Metric Formulas
 
-$$\Delta xT = xT(\text{end\_x}, \text{end\_y}) - xT(\text{start\_x}, \text{start\_y})$$
+$$\Delta xT = xT(x_{\text{end}}, y_{\text{end}}) - xT(x_{\text{start}}, y_{\text{start}})$$
 
-$$\text{pressure\_index} = \min(100.0, \max(0.0, 100.0 \times \exp(-0.45 \times \text{nearest\_defender\_dist\_m})))$$
+$$\text{Pressure Index} = \min\left(100.0, \max\left(0.0, 100.0 \times \exp(-0.45 \times d_{\text{def}})\right)\right)$$
 
-$$\text{pass\_difficulty} = \min\left(99.0, \max\left(5.0, 0.35 \cdot P + 0.30 \cdot \left(\frac{D}{45} \cdot 100\right) + 0.25 \cdot (B \cdot 22) + 0.10 \cdot S\right)\right)$$
+$$\text{Pass Difficulty} = \min\left(99.0, \max\left(5.0, 0.35 \cdot P + 0.30 \cdot \left(\frac{D}{45} \cdot 100\right) + 0.25 \cdot (B \cdot 22) + 0.10 \cdot S\right)\right)$$
 
-Where $P$ is Pressure Index, $D$ is distance in meters, $B$ is defenders bypassed, and $S$ is ball speed ($km/h$).
+Where $P$ is Pressure Index, $D$ is distance in meters, $B$ is defenders bypassed, $S$ is ball speed ($\text{km/h}$), and $d_{\text{def}}$ is nearest defender distance in meters.
 
 ---
 
