@@ -47,235 +47,181 @@ export const PersonaFeed: React.FC<PersonaFeedProps> = ({
     : "#8 Vance";
 
   return (
-    <aside className="w-full flex flex-col bg-slate-900/95 border border-slate-800 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md h-[680px]">
-      {/* Header with Persona & Language Selectors */}
-      <div className="p-3 border-b border-slate-800 bg-slate-950/80 flex flex-col gap-2.5">
+    <aside className="w-full flex flex-col bg-[#0D0F12] border border-white/10 rounded-xl overflow-hidden shadow-2xl h-[680px]">
+      {/* Header with Segmented Persona & Language Selectors */}
+      <div className="p-3 border-b border-white/10 bg-[#090A0D]/90 flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+            <Radio className="w-4 h-4 text-studio-gold" />
+            <h2 className="text-xs font-display font-bold uppercase tracking-wider text-white">
               Studio Intelligence Feed
             </h2>
           </div>
 
           {/* Language Switcher */}
-          <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-lg p-0.5 text-xs font-mono">
-            <button
-              onClick={() => onSelectLanguage("en")}
-              className={`px-1.5 py-0.5 rounded transition-all text-[11px] ${
-                selectedLanguage === "en"
-                  ? "bg-cyan-500 text-slate-950 font-bold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="English"
-            >
-              EN
-            </button>
-            <button
-              onClick={() => onSelectLanguage("es")}
-              className={`px-1.5 py-0.5 rounded transition-all text-[11px] ${
-                selectedLanguage === "es"
-                  ? "bg-cyan-500 text-slate-950 font-bold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="Español"
-            >
-              ES
-            </button>
-            <button
-              onClick={() => onSelectLanguage("ar")}
-              className={`px-1.5 py-0.5 rounded transition-all text-[11px] ${
-                selectedLanguage === "ar"
-                  ? "bg-cyan-500 text-slate-950 font-bold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="العربية (Arabic)"
-            >
-              AR
-            </button>
-            <button
-              onClick={() => onSelectLanguage("ko")}
-              className={`px-1.5 py-0.5 rounded transition-all text-[11px] ${
-                selectedLanguage === "ko"
-                  ? "bg-cyan-500 text-slate-950 font-bold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="한국어 (Korean)"
-            >
-              KO
-            </button>
-            <button
-              onClick={() => onSelectLanguage("fr")}
-              className={`px-1.5 py-0.5 rounded transition-all text-[11px] ${
-                selectedLanguage === "fr"
-                  ? "bg-cyan-500 text-slate-950 font-bold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="Français (French)"
-            >
-              FR
-            </button>
-            <button
-              onClick={() => onSelectLanguage("pt")}
-              className={`px-1.5 py-0.5 rounded transition-all text-[11px] ${
-                selectedLanguage === "pt"
-                  ? "bg-cyan-500 text-slate-950 font-bold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="Português (Portuguese)"
-            >
-              PT
-            </button>
-            <button
-              onClick={() => onSelectLanguage("de")}
-              className={`px-1.5 py-0.5 rounded transition-all text-[11px] ${
-                selectedLanguage === "de"
-                  ? "bg-cyan-500 text-slate-950 font-bold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-              title="Deutsch (German)"
-            >
-              DE
-            </button>
+          <div className="flex items-center bg-[#07080A] border border-white/10 rounded-md p-0.5 text-xs font-mono">
+            {(["en", "es", "ar", "ko", "fr", "pt", "de"] as const).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => onSelectLanguage(lang)}
+                className={`px-1.5 py-0.5 rounded transition-all text-[11px] uppercase ${
+                  selectedLanguage === lang
+                    ? "bg-white/15 text-white font-bold"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+                title={lang.toUpperCase()}
+              >
+                {lang}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* 3-Way Persona Segmented Selector */}
-        <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-[11px] font-mono">
+        <div className="grid grid-cols-3 gap-1 bg-[#07080A] p-1 rounded-lg border border-white/10 text-xs font-sans">
           <button
             onClick={() => onSelectPersona("analyst")}
-            className={`flex items-center justify-center gap-1.5 py-1.5 rounded transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded transition-all font-medium ${
               selectedPersona === "analyst"
-                ? "bg-cyan-500 text-slate-950 font-bold shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[#181C23] border border-white/10 text-white shadow-sm"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <BarChart3 className="w-3.5 h-3.5" />
+            <BarChart3 className="w-3.5 h-3.5 text-zinc-400" />
             <span>Analyst</span>
           </button>
 
           <button
             onClick={() => onSelectPersona("casual")}
-            className={`flex items-center justify-center gap-1.5 py-1.5 rounded transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded transition-all font-medium ${
               selectedPersona === "casual"
-                ? "bg-amber-500 text-slate-950 font-bold shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[#181C23] border border-white/10 text-white shadow-sm"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <Flame className="w-3.5 h-3.5" />
+            <Flame className="w-3.5 h-3.5 text-zinc-400" />
             <span>Casual</span>
           </button>
 
           <button
             onClick={() => onSelectPersona("player_focus")}
-            className={`flex items-center justify-center gap-1.5 py-1.5 rounded transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded transition-all font-medium ${
               selectedPersona === "player_focus"
-                ? "bg-purple-500 text-slate-950 font-bold shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[#181C23] border border-white/10 text-white shadow-sm"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
             title={`Focus on ${activePlayer?.name || "Player"}`}
           >
-            <Target className="w-3.5 h-3.5" />
+            <Target className="w-3.5 h-3.5 text-zinc-400" />
             <span className="truncate">{playerLabel}</span>
           </button>
         </div>
       </div>
 
-      {/* Narrative Cards Stream (Scrollable) */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+      {/* Narrative Cards Chronological Spine Feed (Scrollable) */}
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3 custom-scrollbar">
         {overlays.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2 font-mono text-xs">
-            <Radio className="w-8 h-8 text-slate-600 animate-pulse" />
-            <p className="font-bold text-slate-300">Listening to Live Stream</p>
-            <p className="text-[11px] text-slate-400">
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-400 space-y-2 font-sans text-xs">
+            <Radio className="w-8 h-8 text-zinc-600 animate-pulse" />
+            <p className="font-semibold text-zinc-300">Listening to Live Stream</p>
+            <p className="text-[11px] text-zinc-500 max-w-xs">
               Key tactical moments and scenario injections will appear here with verified telemetry receipts.
             </p>
           </div>
         ) : (
-          overlays.map((ovl) => {
-            const trans = ovl.personas?.translations || {};
-            const langPack = trans[selectedLanguage] || trans["en"] || {};
-            const copy = langPack[selectedPersona] || ovl.subtext;
-            const head = langPack.headline || ovl.headline;
-            const isCorrected = ovl.verification?.correction_applied;
+          <div className="relative border-l border-white/10 ml-2 pl-4 space-y-3">
+            {overlays.map((ovl) => {
+              const trans = ovl.personas?.translations || {};
+              const langPack = trans[selectedLanguage] || trans["en"] || {};
+              const copy = langPack[selectedPersona] || ovl.subtext;
+              const head = langPack.headline || ovl.headline;
+              const isCorrected = ovl.verification?.correction_applied;
 
-            return (
-              <div
-                key={ovl.overlay_id}
-                className={`bg-slate-950/80 border rounded-xl p-3 space-y-2 transition-all hover:border-slate-600 shadow-md ${
-                  isCorrected ? "border-amber-500/50" : "border-slate-800"
-                }`}
-                dir={isArabic ? "rtl" : "ltr"}
-              >
-                {/* Card Top: Clock, Badge, Status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-1.5 py-0.5 rounded">
-                      {ovl.match_clock}
-                    </span>
-                    <span className="text-[10px] font-mono uppercase text-slate-400 font-semibold">
-                      {ovl.overlay_type.replace(/_/g, " ")}
-                    </span>
+              return (
+                <div
+                  key={ovl.overlay_id}
+                  className={`relative bg-[#090A0D]/90 border rounded-xl p-3 space-y-2 transition-all hover:border-white/20 shadow-sm ${
+                    isCorrected ? "border-amber-500/40" : "border-white/10"
+                  }`}
+                  dir={isArabic ? "rtl" : "ltr"}
+                >
+                  {/* Timeline Node Pip */}
+                  <span
+                    className={`absolute -left-[21px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-[#0D0F12] ${
+                      isCorrected ? "bg-amber-400" : "bg-studio-gold"
+                    }`}
+                  />
+
+                  {/* Card Top: Clock, Badge, Status */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono font-bold text-studio-gold bg-white/[0.04] border border-white/10 px-1.5 py-0.5 rounded tabular-nums">
+                        {ovl.match_clock}
+                      </span>
+                      <span className="text-[9px] font-mono uppercase text-zinc-400 font-semibold tracking-wider">
+                        {ovl.overlay_type.replace(/_/g, " ")}
+                      </span>
+                    </div>
+
+                    {isCorrected ? (
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-600/60">
+                        CORRECTED
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-1 text-[9px] font-mono text-emerald-400">
+                        <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                        <span>GROUNDED</span>
+                      </div>
+                    )}
                   </div>
 
-                  {isCorrected ? (
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-600">
-                      CORRECTED
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-1 text-[9px] font-mono text-emerald-400">
-                      <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                      <span>GROUNDED</span>
-                    </div>
-                  )}
-                </div>
+                  {/* Headline */}
+                  <h4 className="text-xs md:text-sm font-display font-bold text-white tracking-tight leading-snug">
+                    {head}
+                  </h4>
 
-                {/* Headline */}
-                <h4 className="text-xs font-bold text-white tracking-tight leading-snug">
-                  {head}
-                </h4>
+                  {/* Persona Copy */}
+                  <p className="text-[11px] text-zinc-300 leading-relaxed font-sans">
+                    {copy}
+                  </p>
 
-                {/* Persona Copy */}
-                <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
-                  {copy}
-                </p>
+                  {/* Metrics Badge Row */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {Object.entries(ovl.metrics_badge || {}).map(([k, v]) => (
+                      <span
+                        key={k}
+                        className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#13161C] border border-white/10 text-zinc-300 tabular-nums"
+                      >
+                        <strong className="text-zinc-500 font-normal uppercase">{k}:</strong>{" "}
+                        <span className="text-zinc-100 font-semibold">{v}</span>
+                      </span>
+                    ))}
+                  </div>
 
-                {/* Metrics Badge Row */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  {Object.entries(ovl.metrics_badge || {}).map(([k, v]) => (
-                    <span
-                      key={k}
-                      className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300"
-                    >
-                      <strong className="text-slate-400 font-normal">{k}:</strong>{" "}
-                      <span className="text-cyan-300 font-semibold">{v}</span>
-                    </span>
-                  ))}
-                </div>
-
-                {/* Card Footer: View Telemetry Receipts Button & Audio Speak */}
-                <div className="pt-2 border-t border-slate-900 flex items-center justify-between">
-                  {onSpeakText && (
+                  {/* Card Footer: View Receipts & Audio Speak */}
+                  <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between">
+                    {onSpeakText && (
+                      <button
+                        onClick={() => onSpeakText(`${head}. ${copy}`, selectedLanguage)}
+                        className="flex items-center gap-1 text-[10px] font-sans text-zinc-400 hover:text-white transition-colors"
+                        title="Speak this commentary card"
+                      >
+                        <Volume2 className="w-3 h-3 text-studio-gold" />
+                        <span>Listen</span>
+                      </button>
+                    )}
                     <button
-                      onClick={() => onSpeakText(`${head}. ${copy}`, selectedLanguage)}
-                      className="flex items-center gap-1 text-[10px] font-mono text-slate-400 hover:text-emerald-400 transition-colors"
-                      title="Speak this commentary card"
+                      onClick={() => onOpenReceipts(ovl)}
+                      className="flex items-center gap-1 text-[10px] font-sans text-zinc-300 hover:text-white font-medium hover:underline transition-all ml-auto"
                     >
-                      <Volume2 className="w-3 h-3 text-emerald-400" />
-                      <span>Speak</span>
+                      <Receipt className="w-3 h-3 text-zinc-400" />
+                      <span>Audit Receipts →</span>
                     </button>
-                  )}
-                  <button
-                    onClick={() => onOpenReceipts(ovl)}
-                    className="flex items-center gap-1 text-[10px] font-mono text-cyan-400 hover:text-cyan-300 hover:underline transition-all ml-auto"
-                  >
-                    <Receipt className="w-3 h-3" />
-                    <span>View Telemetry Receipts</span>
-                  </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
     </aside>

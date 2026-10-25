@@ -11,9 +11,8 @@ import {
   CheckCircle2,
   Activity,
   Scan,
-  ShieldCheck,
 } from "lucide-react";
-import { VisionFrameResponse, VisionDetection, ALL_PLAYERS } from "@/types/match";
+import { VisionFrameResponse, VisionDetection } from "@/types/match";
 
 interface VisionInspectorModalProps {
   isOpen: boolean;
@@ -22,7 +21,6 @@ interface VisionInspectorModalProps {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-// Robust default dataset representing real-time tactical camera bounding boxes and homography
 const DEFAULT_VISION_DATA: VisionFrameResponse = {
   frame_id: 19420,
   match_clock: "64:12",
@@ -76,7 +74,6 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
   const fetchVisionFrame = useCallback(async () => {
     setIsLoading(true);
     try {
-      // First attempt Next.js rewrite proxy, then fall back to direct backend URL
       let res: Response | null = null;
       try {
         res = await fetch("/api/vision/inspect");
@@ -116,7 +113,7 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Continuous tactical camera canvas animation with scanline radar sweep
+  // Canvas render loop
   useEffect(() => {
     if (!isOpen) return;
 
@@ -131,17 +128,17 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
           const width = canvas.width;
           const height = canvas.height;
 
-          // 1. Draw Broadcast Camera Background (Floodlit pitch perspective)
+          // Pitch perspective gradient (Obsidian Slate Turf)
           const pitchGrad = ctx.createLinearGradient(0, 0, 0, height);
-          pitchGrad.addColorStop(0, "#082414");
-          pitchGrad.addColorStop(0.5, "#0d3b1f");
-          pitchGrad.addColorStop(1, "#071f11");
+          pitchGrad.addColorStop(0, "#06130C");
+          pitchGrad.addColorStop(0.5, "#0A1D13");
+          pitchGrad.addColorStop(1, "#05110B");
           ctx.fillStyle = pitchGrad;
           ctx.fillRect(0, 0, width, height);
 
           // Perspective pitch striping
           ctx.save();
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
           ctx.lineWidth = 1;
           for (let i = 0; i < 14; i++) {
             const y = (height / 14) * i;
@@ -150,6 +147,7 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
             ctx.lineTo(width, y);
             ctx.stroke();
           }
+
           // Perspective vertical guidelines
           for (let i = 0; i <= 10; i++) {
             const topX = (width / 10) * i * 0.8 + width * 0.1;
@@ -161,32 +159,32 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
           }
 
           // Center Circle Perspective
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+          ctx.lineWidth = 1.25;
           ctx.beginPath();
           ctx.ellipse(width / 2, height / 2, width * 0.12, height * 0.16, 0, 0, Math.PI * 2);
           ctx.stroke();
 
           // Camera Crosshair Center
-          ctx.strokeStyle = "rgba(6, 182, 212, 0.4)";
+          ctx.strokeStyle = "rgba(229, 193, 88, 0.3)";
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(width / 2 - 20, height / 2);
-          ctx.lineTo(width / 2 + 20, height / 2);
-          ctx.moveTo(width / 2, height / 2 - 20);
-          ctx.lineTo(width / 2, height / 2 + 20);
+          ctx.moveTo(width / 2 - 16, height / 2);
+          ctx.lineTo(width / 2 + 16, height / 2);
+          ctx.moveTo(width / 2, height / 2 - 16);
+          ctx.lineTo(width / 2, height / 2 + 16);
           ctx.stroke();
 
-          // 2. Animated Radar Scanline
-          scanLineRef.current = (scanLineRef.current + 2.5) % height;
+          // Subtle Scanline
+          scanLineRef.current = (scanLineRef.current + 2.0) % height;
           const scanY = scanLineRef.current;
-          const scanGrad = ctx.createLinearGradient(0, scanY - 30, 0, scanY);
-          scanGrad.addColorStop(0, "rgba(6, 182, 212, 0.0)");
-          scanGrad.addColorStop(1, "rgba(6, 182, 212, 0.22)");
+          const scanGrad = ctx.createLinearGradient(0, scanY - 24, 0, scanY);
+          scanGrad.addColorStop(0, "rgba(229, 193, 88, 0.0)");
+          scanGrad.addColorStop(1, "rgba(229, 193, 88, 0.12)");
           ctx.fillStyle = scanGrad;
-          ctx.fillRect(0, Math.max(0, scanY - 30), width, 30);
+          ctx.fillRect(0, Math.max(0, scanY - 24), width, 24);
 
-          ctx.strokeStyle = "rgba(6, 182, 212, 0.65)";
+          ctx.strokeStyle = "rgba(229, 193, 88, 0.35)";
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(0, scanY);
@@ -195,16 +193,14 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
 
           // Camera HUD Overlays
           ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-          ctx.font = "bold 10px monospace";
-          ctx.fillText("CAM-01 [MAIN BROADCAST TACTICAL FEED 1080p60]", 16, 22);
-          ctx.fillStyle = "#10B981";
-          ctx.fillText(`FRAME: #${visionData.frame_id} | TIME: ${visionData.match_clock} | YOLOv11x 18.4ms`, 16, 38);
+          ctx.font = "bold 9px monospace";
+          ctx.fillText("CAM-01 [MAIN BROADCAST TACTICAL FEED 1080p60]", 16, 20);
+          ctx.fillStyle = "#E5C158";
+          ctx.fillText(`FRAME: #${visionData.frame_id} | TIME: ${visionData.match_clock} | YOLOv11x 18.4ms`, 16, 34);
 
-          // 3. Draw Bounding Boxes & Detected Tracklets
+          // Draw Bounding Boxes
           visionData.detections.forEach((det) => {
             const [ymin, xmin, ymax, xmax] = det.box_2d;
-
-            // Handle both 0..1 unit-normalized and 0..1000 pixel-normalized formats
             const isUnitNormalized = xmax <= 1.0 && ymax <= 1.0;
             const normX = det.pitch_x !== undefined
               ? (det.pitch_x / 105.0) * 0.82 + 0.09
@@ -214,57 +210,57 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
               : (isUnitNormalized ? ymax : ymax / 1000.0);
 
             const isBall = det.label === "ball";
-            const bw = isBall ? 16 : 30;
-            const bh = isBall ? 16 : 46;
+            const bw = isBall ? 14 : 28;
+            const bh = isBall ? 14 : 42;
             const bx = normX * width - bw / 2;
             const by = normY * height - bh;
 
             const isHovered = hoveredDetection?.tracking_id === det.tracking_id;
 
-            let strokeColor = "#3B82F6"; // MSB
-            let fillColor = "rgba(59, 130, 246, 0.22)";
-            let tagBg = "#1d4ed8";
-            let avatarColor = "#3B82F6";
+            let strokeColor = "#2563EB"; // MSB
+            let fillColor = "rgba(37, 99, 235, 0.16)";
+            let tagBg = "#1E3A8A";
+            let avatarColor = "#2563EB";
 
             if (det.label === "player_nlr") {
-              strokeColor = "#EF4444"; // NLR
-              fillColor = "rgba(239, 68, 68, 0.22)";
-              tagBg = "#b91c1c";
-              avatarColor = "#EF4444";
+              strokeColor = "#E11D48";
+              fillColor = "rgba(225, 29, 72, 0.16)";
+              tagBg = "#881337";
+              avatarColor = "#E11D48";
             } else if (det.label === "goalkeeper") {
               strokeColor = "#F59E0B";
-              fillColor = "rgba(245, 158, 11, 0.25)";
-              tagBg = "#b45309";
+              fillColor = "rgba(245, 158, 11, 0.18)";
+              tagBg = "#78350F";
               avatarColor = "#F59E0B";
             } else if (det.label === "ball") {
-              strokeColor = "#FACC15";
-              fillColor = "rgba(250, 204, 21, 0.55)";
-              tagBg = "#ca8a04";
-              avatarColor = "#FACC15";
+              strokeColor = "#E5C158";
+              fillColor = "rgba(229, 193, 88, 0.4)";
+              tagBg = "#715B1E";
+              avatarColor = "#E5C158";
             } else if (det.label === "referee") {
               strokeColor = "#10B981";
-              fillColor = "rgba(16, 185, 129, 0.25)";
-              tagBg = "#047857";
+              fillColor = "rgba(16, 185, 129, 0.18)";
+              tagBg = "#064E3B";
               avatarColor = "#10B981";
             }
 
             if (isHovered) {
-              strokeColor = "#06B6D4";
-              fillColor = "rgba(6, 182, 212, 0.45)";
+              strokeColor = "#FFFFFF";
+              fillColor = "rgba(255, 255, 255, 0.25)";
             }
 
-            // Fill & stroke bounding box
+            // Fill & stroke
             ctx.fillStyle = fillColor;
             ctx.fillRect(bx, by, bw, bh);
 
             ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = isHovered ? 2.5 : 1.5;
+            ctx.lineWidth = isHovered ? 2.0 : 1.25;
             ctx.strokeRect(bx, by, bw, bh);
 
-            // Corner brackets for AI vision targeting aesthetic
-            const cornerLen = 6;
+            // Precision corner brackets
+            const cornerLen = 5;
             ctx.strokeStyle = "#FFFFFF";
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 1.25;
             ctx.beginPath();
             ctx.moveTo(bx, by + cornerLen);
             ctx.lineTo(bx, by);
@@ -274,62 +270,49 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
             ctx.lineTo(bx + bw - cornerLen, by + bh);
             ctx.stroke();
 
-            // Draw player avatar dot and shirt number inside the box
+            // Player dot
             if (!isBall) {
               const centerX = bx + bw / 2;
               const centerY = by + bh * 0.55;
 
-              // Player circle
               ctx.fillStyle = avatarColor;
               ctx.beginPath();
-              ctx.arc(centerX, centerY, 7.5, 0, Math.PI * 2);
+              ctx.arc(centerX, centerY, 6.5, 0, Math.PI * 2);
               ctx.fill();
               ctx.strokeStyle = "#FFFFFF";
-              ctx.lineWidth = 1;
+              ctx.lineWidth = 0.75;
               ctx.stroke();
 
-              // Player shirt number
               if (det.shirt_number !== null && det.shirt_number !== undefined) {
                 ctx.fillStyle = "#FFFFFF";
-                ctx.font = "bold 8px sans-serif";
+                ctx.font = "bold 7px sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText(String(det.shirt_number), centerX, centerY);
                 ctx.textAlign = "start";
                 ctx.textBaseline = "alphabetic";
               }
-            } else {
-              // Ball circle
-              const centerX = bx + bw / 2;
-              const centerY = by + bh / 2;
-              ctx.fillStyle = "#FFFFFF";
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.strokeStyle = "#000000";
-              ctx.lineWidth = 1;
-              ctx.stroke();
             }
 
-            // Foot contact point for homography pitch projection
+            // Foot contact point
             const footX = bx + bw / 2;
             const footY = by + bh;
-            ctx.fillStyle = isHovered ? "#06B6D4" : "#10B981";
+            ctx.fillStyle = isHovered ? "#FFFFFF" : "#E5C158";
             ctx.beginPath();
-            ctx.arc(footX, footY, isHovered ? 3.5 : 2, 0, Math.PI * 2);
+            ctx.arc(footX, footY, isHovered ? 3 : 2, 0, Math.PI * 2);
             ctx.fill();
 
-            // Tag label above box: TRK ID + Confidence
+            // Tag label
             const tagText = `${det.tracking_id} ${(det.confidence * 100).toFixed(0)}%`;
-            ctx.font = "bold 9px monospace";
+            ctx.font = "bold 8px monospace";
             const tagW = ctx.measureText(tagText).width + 6;
-            const tagH = 13;
+            const tagH = 12;
 
             ctx.fillStyle = tagBg;
             ctx.fillRect(bx, Math.max(0, by - tagH), tagW, tagH);
 
             ctx.fillStyle = "#FFFFFF";
-            ctx.fillText(tagText, bx + 3, Math.max(9, by - 3));
+            ctx.fillText(tagText, bx + 3, Math.max(8, by - 3));
           });
 
           ctx.restore();
@@ -356,25 +339,25 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-6xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 md:p-6 animate-fade-in">
+      <div className="relative w-full max-w-6xl bg-[#090A0E] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden text-[#F4F4F6]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/80">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-[#0D0F12]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cyan-950/80 border border-cyan-800/80 text-cyan-400">
+            <div className="p-2 rounded-lg bg-white/[0.04] border border-white/10 text-studio-gold">
               <Camera className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-white text-base tracking-tight font-mono">
+                <h3 className="font-display font-bold text-white text-base tracking-tight">
                   PitchPulse Vision Inspector
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800 text-emerald-400 font-semibold uppercase tracking-wider flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  Live Homography Calibrated
+                  Homography Calibrated
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-xs text-zinc-400 font-sans">
                 Real-Time Broadcast Camera Coordinate Extraction · YOLOv11x + ByteTrack
               </p>
             </div>
@@ -384,15 +367,15 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
             <button
               onClick={fetchVisionFrame}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-mono transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#14171D] hover:bg-[#1A1F28] border border-white/10 text-zinc-200 text-xs font-sans transition-all disabled:opacity-50"
               title="Run inference cycle"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-cyan-400" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-studio-gold" : ""}`} />
               <span>Inference Refresh</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -401,44 +384,44 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-4 md:p-5 flex flex-col gap-4 custom-scrollbar">
-          {/* Top Telemetry Pills */}
+          {/* Top Telemetry Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl font-mono">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Cpu className="w-3 h-3 text-cyan-400" />
+            <div className="bg-[#0D0F12] border border-white/10 p-2.5 rounded-xl font-mono">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-1 font-sans">
+                <Cpu className="w-3 h-3 text-studio-gold" />
                 Vision Backbone
               </span>
-              <p className="text-xs font-bold text-slate-100 mt-1 truncate">
+              <p className="text-xs font-bold text-zinc-200 mt-1 truncate">
                 {visionData.model_name}
               </p>
             </div>
 
-            <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl font-mono">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            <div className="bg-[#0D0F12] border border-white/10 p-2.5 rounded-xl font-mono">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-1 font-sans">
                 <Activity className="w-3 h-3 text-emerald-400" />
                 Inference Latency
               </span>
-              <p className="text-xs font-bold text-emerald-400 mt-1">
+              <p className="text-xs font-bold text-emerald-400 mt-1 tabular-nums">
                 {visionData.inference_latency_ms} ms (60 FPS)
               </p>
             </div>
 
-            <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl font-mono">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Crosshair className="w-3 h-3 text-purple-400" />
+            <div className="bg-[#0D0F12] border border-white/10 p-2.5 rounded-xl font-mono">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-1 font-sans">
+                <Crosshair className="w-3 h-3 text-zinc-400" />
                 Planar Homography
               </span>
-              <p className="text-xs font-bold text-purple-300 mt-1 truncate">
+              <p className="text-xs font-bold text-zinc-200 mt-1 truncate">
                 {visionData.homography_matrix_status}
               </p>
             </div>
 
-            <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl font-mono">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Scan className="w-3 h-3 text-amber-400" />
+            <div className="bg-[#0D0F12] border border-white/10 p-2.5 rounded-xl font-mono">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-1 font-sans">
+                <Scan className="w-3 h-3 text-studio-gold" />
                 Active Tracklets
               </span>
-              <p className="text-xs font-bold text-amber-300 mt-1">
+              <p className="text-xs font-bold text-studio-gold mt-1 tabular-nums">
                 {visionData.detections.length} Entities Tracked
               </p>
             </div>
@@ -448,16 +431,16 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Visual Canvas (Camera Viewport) */}
             <div className="lg:col-span-7 flex flex-col gap-2">
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <Camera className="w-3.5 h-3.5 text-cyan-400" />
-                  Synthesized Tactical High-Camera View (1920x1080)
+              <div className="flex items-center justify-between text-xs font-sans text-zinc-400">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Camera className="w-3.5 h-3.5 text-studio-gold" />
+                  Tactical Broadcast Feed (1920x1080)
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-zinc-500 font-mono">
                   Hover table rows to inspect target box
                 </span>
               </div>
-              <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-black aspect-[16/9] shadow-inner">
+              <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black aspect-[16/9] shadow-inner">
                 <canvas
                   ref={canvasRef}
                   width={960}
@@ -469,22 +452,22 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
 
             {/* Detections & Homography Matrix Extraction Table */}
             <div className="lg:col-span-5 flex flex-col gap-2">
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                <div className="flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="flex items-center justify-between text-xs font-sans text-zinc-400">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <Layers className="w-3.5 h-3.5 text-zinc-400" />
                   <span>Homography Output Table</span>
                 </div>
 
                 {/* Filter buttons */}
-                <div className="flex items-center gap-1 bg-slate-900 p-0.5 rounded border border-slate-800 text-[10px]">
+                <div className="flex items-center gap-1 bg-[#07080A] p-0.5 rounded border border-white/10 text-[10px] font-mono">
                   {(["ALL", "NLR", "MSB", "BALL"] as const).map((filt) => (
                     <button
                       key={filt}
                       onClick={() => setSelectedFilter(filt)}
                       className={`px-1.5 py-0.5 rounded font-bold transition-colors ${
                         selectedFilter === filt
-                          ? "bg-cyan-500 text-slate-950"
-                          : "text-slate-400 hover:text-white"
+                          ? "bg-white/15 text-white"
+                          : "text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
                       {filt}
@@ -493,9 +476,9 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
                 </div>
               </div>
 
-              <div className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden flex-1 max-h-[380px] overflow-y-auto custom-scrollbar">
+              <div className="bg-[#07080A] border border-white/10 rounded-xl overflow-hidden flex-1 max-h-[380px] overflow-y-auto custom-scrollbar">
                 <table className="w-full text-left font-mono text-[11px] border-collapse">
-                  <thead className="bg-slate-900 sticky top-0 border-b border-slate-800 text-[10px] text-slate-400 uppercase">
+                  <thead className="bg-[#0D0F12] sticky top-0 border-b border-white/10 text-[10px] text-zinc-500 uppercase">
                     <tr>
                       <th className="py-2 px-2.5">Track ID</th>
                       <th className="py-2 px-2">Entity</th>
@@ -503,7 +486,7 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
                       <th className="py-2 px-2 text-right">Pitch (X, Y)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-900">
+                  <tbody className="divide-y divide-white/[0.04]">
                     {filteredDetections.map((det) => {
                       const isHovered = hoveredDetection?.tracking_id === det.tracking_id;
                       const isNLR = det.label === "player_nlr" || (det.label === "goalkeeper" && det.tracking_id.includes("NLR"));
@@ -516,30 +499,30 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
                           onMouseLeave={() => setHoveredDetection(null)}
                           className={`cursor-pointer transition-colors ${
                             isHovered
-                              ? "bg-cyan-950/60 text-white"
-                              : "hover:bg-slate-900/60 text-slate-300"
+                              ? "bg-white/10 text-white"
+                              : "hover:bg-white/[0.03] text-zinc-300"
                           }`}
                         >
                           <td className="py-1.5 px-2.5 font-bold">
                             <span
                               className={`px-1.5 py-0.5 rounded text-[10px] ${
                                 isNLR
-                                  ? "bg-rose-950 text-rose-300 border border-rose-800"
+                                  ? "bg-rose-950/60 text-rose-300 border border-rose-800"
                                   : isMSB
-                                  ? "bg-blue-950 text-blue-300 border border-blue-800"
-                                  : "bg-amber-950 text-amber-300 border border-amber-800"
+                                  ? "bg-blue-950/60 text-blue-300 border border-blue-800"
+                                  : "bg-amber-950/60 text-amber-300 border border-amber-800"
                               }`}
                             >
                               {det.tracking_id}
                             </span>
                           </td>
-                          <td className="py-1.5 px-2 truncate max-w-[120px]">
+                          <td className="py-1.5 px-2 truncate max-w-[120px] font-sans">
                             {det.player_name || det.label.replace("_", " ").toUpperCase()}
                           </td>
-                          <td className="py-1.5 px-2 text-emerald-400">
+                          <td className="py-1.5 px-2 text-emerald-400 tabular-nums">
                             {(det.confidence * 100).toFixed(1)}%
                           </td>
-                          <td className="py-1.5 px-2 text-right font-semibold text-cyan-300">
+                          <td className="py-1.5 px-2 text-right font-semibold text-zinc-200 tabular-nums">
                             ({det.pitch_x.toFixed(1)}m, {det.pitch_y.toFixed(1)}m)
                           </td>
                         </tr>
@@ -553,14 +536,14 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-xs font-mono text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        <div className="px-5 py-3 border-t border-white/10 bg-[#0D0F12] flex items-center justify-between text-xs font-sans text-zinc-400">
+          <div className="flex items-center gap-2 font-mono text-[11px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Planar Perspective Homography Matrix H (3x3) Calibrated to Wembley Synthetic Grid</span>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-[#14171D] hover:bg-[#1A1F28] border border-white/10 text-white font-medium text-xs transition-colors"
           >
             Close Inspector
           </button>

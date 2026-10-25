@@ -26,25 +26,25 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
   const verifiedNarrative = overlay.verified_narrative || overlay.subtext;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-all animate-fade-in">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all animate-fade-in">
       <div
-        className="w-full max-w-xl bg-slate-950 border-l border-slate-800 h-full overflow-y-auto p-5 text-slate-100 flex flex-col gap-4 shadow-2xl custom-scrollbar"
+        className="w-full max-w-xl bg-[#090A0E] border-l border-white/10 h-full overflow-y-auto p-5 text-[#F4F4F6] flex flex-col gap-4 shadow-2xl custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4 text-studio-gold" />
             </div>
             <div>
-              <h2 className="text-sm font-bold font-mono text-white flex items-center gap-2">
+              <h2 className="text-sm font-display font-bold text-white flex items-center gap-2">
                 <span>STUDIO TELEMETRY RECEIPTS</span>
-                <span className="text-[10px] bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-cyan-400">
+                <span className="text-[10px] font-mono bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded text-zinc-300">
                   EVENT #{receipt?.source_event_ids?.[0] ?? "101"}
                 </span>
               </h2>
-              <p className="text-[11px] text-slate-400 font-mono">
+              <p className="text-[11px] text-zinc-400 font-sans">
                 Mathematical Verification Audit Trail
               </p>
             </div>
@@ -52,7 +52,7 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[#14171D] hover:bg-[#1A1F27] border border-white/10 text-zinc-400 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -60,10 +60,10 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
 
         {/* Verification Status Banner */}
         <div
-          className={`p-3.5 rounded-xl border flex items-center justify-between font-mono text-xs ${
+          className={`p-3.5 rounded-xl border flex items-center justify-between font-sans text-xs ${
             isCorrected
-              ? "bg-amber-950/40 border-amber-500/60 text-amber-200"
-              : "bg-emerald-950/40 border-emerald-500/60 text-emerald-200"
+              ? "bg-amber-950/30 border-amber-500/40 text-amber-200"
+              : "bg-emerald-950/30 border-emerald-500/40 text-emerald-200"
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -78,41 +78,41 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
                   ? "AUTO-CORRECTED & GROUNDED"
                   : "100% GROUNDED (ZERO HALLUCINATION)"}
               </div>
-              <p className="text-[11px] text-slate-400 pt-0.5">
+              <p className="text-[11px] text-zinc-400 pt-0.5">
                 {receipt?.audit_notes ||
-                  "All spatial metrics, directions, and player entities verified against live telemetry."}
+                  "All spatial metrics, vectors, and player entities verified against live telemetry."}
               </p>
             </div>
           </div>
           <div className="text-right shrink-0 pl-2">
-            <span className="text-[10px] uppercase text-slate-400 block">Confidence</span>
-            <span className="text-base font-black font-mono text-white">
+            <span className="text-[10px] uppercase text-zinc-400 block font-mono">Confidence</span>
+            <span className="text-base font-bold font-display text-white tabular-nums">
               {Math.round((receipt?.confidence_score ?? 1.0) * 100)}%
             </span>
           </div>
         </div>
 
-        {/* Draft Comparison: Agent 1 (Initial Draft) vs Agent 2 (Verified On-Air) */}
+        {/* Draft Comparison: Agent 1 vs Agent 2 */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-wider">
-            <FileText className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-wider">
+            <FileText className="w-3.5 h-3.5 text-studio-gold" />
             <span>Agent 1 Draft vs. Agent 2 Verified Comparison</span>
           </div>
 
-          <div className="grid grid-cols-1 gap-2.5 font-mono text-xs">
+          <div className="grid grid-cols-1 gap-2.5 text-xs">
             {/* Agent 1 Draft */}
-            <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-lg space-y-1">
-              <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider block">
+            <div className="bg-[#0D0F12] border border-white/10 p-3 rounded-lg space-y-1">
+              <span className="text-[10px] font-mono text-rose-400 font-bold uppercase tracking-wider block">
                 [Agent 1: Narrator Draft Copy]
               </span>
-              <p className="text-slate-300 font-sans text-xs leading-relaxed">
+              <p className="text-zinc-300 font-sans text-xs leading-relaxed">
                 {initialDraft}
               </p>
             </div>
 
             {/* Agent 2 Verified Copy */}
-            <div className="bg-slate-900/90 border border-emerald-500/40 p-3 rounded-lg space-y-1 shadow-sm">
-              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
+            <div className="bg-[#0D0F12] border border-emerald-500/30 p-3 rounded-lg space-y-1 shadow-sm">
+              <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">
                 [Agent 2: Studio Verifier Emitted On-Air Copy]
               </span>
               <p className="text-white font-sans text-xs leading-relaxed font-medium">
@@ -124,34 +124,34 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
 
         {/* Claim vs. Ground Truth Audit Table */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-wider">
-            <ShieldAlert className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-wider">
+            <ShieldAlert className="w-3.5 h-3.5 text-studio-gold" />
             <span>Telemetry Assertion Verification Table</span>
           </div>
 
-          <div className="border border-slate-800 rounded-lg overflow-hidden font-mono text-xs">
+          <div className="border border-white/10 rounded-lg overflow-hidden font-mono text-xs">
             <table className="w-full text-left">
-              <thead className="bg-slate-900 text-slate-400 text-[10px] uppercase">
+              <thead className="bg-[#12151B] text-zinc-400 text-[10px] uppercase">
                 <tr>
                   <th className="p-2.5">Claimed Metric</th>
                   <th className="p-2.5">Telemetry Truth</th>
                   <th className="p-2.5 text-right">Audit Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80 bg-slate-950/60">
+              <tbody className="divide-y divide-white/[0.06] bg-[#07080A]/60">
                 {(receipt?.checked_claims || []).map((claim, idx) => (
-                  <tr key={idx} className="hover:bg-slate-900/40">
-                    <td className="p-2.5 text-slate-200">{claim.claim}</td>
-                    <td className="p-2.5 text-cyan-300 font-bold">
+                  <tr key={idx} className="hover:bg-white/[0.02]">
+                    <td className="p-2.5 text-zinc-300 font-sans">{claim.claim}</td>
+                    <td className="p-2.5 text-zinc-100 font-bold tabular-nums">
                       {String(claim.ground_truth)}
                     </td>
                     <td className="p-2.5 text-right">
                       {claim.status === "MATCH" ? (
-                        <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800 text-emerald-400 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800 text-emerald-400 text-[10px] font-bold">
                           MATCH
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-800 text-amber-300 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800 text-amber-300 text-[10px] font-bold">
                           CORRECTED
                         </span>
                       )}
@@ -165,12 +165,12 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
 
         {/* Raw Telemetry JSON Snapshot */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-wider">
-            <Code2 className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-wider">
+            <Code2 className="w-3.5 h-3.5 text-studio-gold" />
             <span>Raw Ingest Vector Snapshot</span>
           </div>
 
-          <pre className="bg-slate-900/90 border border-slate-800 rounded-lg p-3 font-mono text-[11px] text-slate-300 overflow-x-auto custom-scrollbar">
+          <pre className="bg-[#07080A] border border-white/10 rounded-lg p-3 font-mono text-[11px] text-zinc-300 overflow-x-auto custom-scrollbar">
             {JSON.stringify(receipt?.raw_telemetry_snapshot || {}, null, 2)}
           </pre>
         </div>
