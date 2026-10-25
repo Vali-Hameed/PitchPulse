@@ -188,7 +188,7 @@ export default function BroadcastControlDeckPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 flex flex-col text-slate-100">
+    <main className="min-h-screen bg-[#07080A] flex flex-col text-[#F4F4F6]">
       {/* 1. Master Top Control Bar */}
       <TopControlBar
         score={scoreState}
@@ -206,11 +206,11 @@ export default function BroadcastControlDeckPage() {
       />
 
       {/* 2. Master Broadcast Layout Grid */}
-      <div className="flex-1 p-3 md:p-4 max-w-[1720px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* Left Column: Interactive 2D Pitch Canvas + Television Lower-Third + Momentum Gauge */}
-        <section className="lg:col-span-8 flex flex-col gap-4">
-          {/* Pitch Container with Embedded Lower-Third Broadcast Overlay */}
-          <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-950">
+      <div className="flex-1 p-3 md:p-4 max-w-[1780px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+        {/* Left Column: Interactive 2D Pitch Canvas + Television Lower-Third Chyron + Linear Telemetry */}
+        <section className="lg:col-span-8 flex flex-col gap-3.5">
+          {/* Pitch Container with Embedded Lower-Third Broadcast Chyron */}
+          <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#07080A]">
             <PitchCanvas
               frameBufferRef={frameBufferRef}
               latestTick={latestTick}
@@ -220,7 +220,7 @@ export default function BroadcastControlDeckPage() {
               onSelectPlayer={handleSelectPlayer}
             />
 
-            {/* Broadcast Lower-Third Overlay Graphic */}
+            {/* Broadcast Lower-Third Chyron Graphic */}
             <BroadcastOverlay
               overlay={activeOverlay}
               selectedPersona={selectedPersona}
@@ -229,7 +229,7 @@ export default function BroadcastControlDeckPage() {
             />
           </div>
 
-          {/* Semicircle Control vs. Chaos Gauge & Field Tilt Momentum Bar */}
+          {/* F1-Style Precision Linear Telemetry Strip & Territory Bar */}
           <MomentumGauge metrics={latestTick?.metrics ?? null} />
         </section>
 
