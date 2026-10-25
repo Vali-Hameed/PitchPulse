@@ -27,6 +27,7 @@ from app.engine.moment_detector import evaluate_moment
 from app.models.schemas import (
     BroadcastOverlayPayload,
     ControlRequest,
+    CustomEventIngestRequest,
     HealthResponse,
     MatchTickPayload,
     RawMatchEvent,
@@ -146,6 +147,111 @@ class MatchEngine:
                     status="live",
                 ).model_dump(),
             )
+            self.broadcast("overlay", overlay.model_dump())
+
+            return overlay
+
+    async def ingest_custom_event(self, req: CustomEventIngestRequest) -> BroadcastOverlayPayload:
+        """Ingest an arbitrary synthetic telemetry JSON event and run the full 5-stage pipeline."""
+        async with self.lock:
+            if req.match_clock:
+                self.simulator.set_match_clock(req.match_clock)
+
+            self.simulator.event_counter += 1
+            actor_obj = self.simulator.players.get(req.actor_id)
+            actor_name = actor_obj.name if actor_obj else req.actor_id
+            actor_number = actor_obj.shirt_number if actor_obj else 8
+            team = actor_obj.team if actor_obj else req.team
+
+            target_obj = self.simulator.players.get(req.target_id) if req.target_id else None
+            target_name = target_obj.name if target_obj else req.target_id
+            target_number = target_obj.shirt_number if target_obj else None
+
+            # Update actor & target coordinates in simulator
+            if actor_obj:
+                actor_obj.x = req.start_x
+                actor_obj.y = req.start_y
+            if target_obj:
+                target_obj.x = req.end_x
+                target_obj.y = req.end_y
+
+            self.simulator.current_carrier_id = req.target_id or req.actor_id
+            self.simulator.ball.x = req.end_x
+            self.simulator.ball.y = req.end_y
+            self.simulator.ball.speed_kmh = req.ball_speed_kmh
+
+            if req.event_type == "goal":
+                if team == "NLR":
+                    self.nlr_score += 1
+                else:
+                    self.msb_score += 1
+
+            ev = RawMatchEvent(
+                event_id=self.simulator.event_counter,
+                match_clock=self.simulator.match_clock_str,
+                timestamp_sec=round(self.simulator.match_sec, 2),
+                event_type=req.event_type,
+                team=team,
+                actor_id=req.actor_id,
+                actor_name=actor_name,
+                actor_number=actor_number,
+                target_id=req.target_id,
+                target_name=target_name,
+                target_number=target_number,
+                start_x=req.start_x,
+                start_y=req.start_y,
+                end_x=req.end_x,
+                end_y=req.end_y,
+                ball_speed_kmh=req.ball_speed_kmh,
+                nearest_defender_dist_m=req.nearest_defender_dist_m,
+                defenders_bypassed=req.defenders_bypassed,
+                players_snapshot=list(self.simulator.players.values()),
+            )
+
+            metrics = self.metrics_engine.compute(ev)
+            is_key, reason, highlights = evaluate_moment(ev, metrics)
+            if not reason:
+                if req.event_type in ("goal", "shot"):
+                    reason = "goal_threat"
+                elif req.event_type in ("interception", "tackle", "pressure"):
+                    reason = "high_press_turnover"
+                elif req.event_type == "turnover":
+                    reason = "chaos_surge"
+                else:
+                    reason = "line_breaking_pass"
+            highlights = [p for p in [req.actor_id, req.target_id] if p]
+
+            overlay = await self.orchestrator.run(
+                event=ev,
+                metrics=metrics,
+                trigger_reason=reason,
+                highlight_player_ids=highlights,
+                forced_draft=req.forced_draft,
+            )
+
+            self.active_overlay = overlay
+            self.overlays_history.append(overlay)
+            self.pipeline_latencies.append(overlay.pipeline_latency_ms or 340.0)
+            self.last_overlay_time = time.time()
+
+            tick_payload = MatchTickPayload(
+                match_clock=self.simulator.match_clock_str,
+                timestamp_sec=round(self.simulator.match_sec, 2),
+                current_event=ev,
+                metrics=metrics,
+                active_overlay=self.active_overlay,
+            )
+
+            self.broadcast(
+                "score",
+                ScoreState(
+                    nlr_score=self.nlr_score,
+                    msb_score=self.msb_score,
+                    match_clock=self.simulator.match_clock_str,
+                    status="live" if self.is_playing else "paused",
+                ).model_dump(),
+            )
+            self.broadcast("tick", tick_payload.model_dump())
             self.broadcast("overlay", overlay.model_dump())
 
             return overlay
@@ -329,6 +435,13 @@ async def inject_scenario(scenario_id: str):
     """Inject one of the 5 pre-configured demo scenarios immediately into the stream."""
     overlay = await engine.inject_scenario(scenario_id)
     return {"status": "injected", "scenario_id": scenario_id, "overlay": overlay}
+
+
+@app.post("/api/events/ingest")
+async def ingest_custom_telemetry_event(req: CustomEventIngestRequest):
+    """Ingest a custom synthetic match JSON event directly through the 5-stage pipeline."""
+    overlay = await engine.ingest_custom_event(req)
+    return {"status": "ingested", "overlay": overlay}
 
 
 @app.post("/api/control")

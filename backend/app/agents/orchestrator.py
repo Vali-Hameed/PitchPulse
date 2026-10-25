@@ -6,6 +6,7 @@ to produce standardized, frame-accurate BroadcastOverlayPayload objects.
 
 from __future__ import annotations
 
+import math
 import time
 import uuid
 from typing import List, Literal, Optional
@@ -71,10 +72,13 @@ class AgentOrchestrator:
         )
 
         elapsed_ms = round((time.perf_counter() - start_ts) * 1000.0, 1)
+        dist_m = math.hypot(event.end_x - event.start_x, event.end_y - event.start_y)
 
-        # Format metrics badge values
+        # Format metrics badge values (includes Pass Difficulty & Distance per Hackathon Brief Req ii)
         badge = {
             "ΔxT": f"+{metrics.xt_delta:.2f}" if metrics.xt_delta >= 0 else f"{metrics.xt_delta:.2f}",
+            "Difficulty": f"{metrics.pass_difficulty_score:.0f}/99",
+            "Dist": f"{dist_m:.1f}m",
             "Pressure": f"{metrics.pressure_index:.0f}%",
             "Speed": f"{event.ball_speed_kmh:.0f} km/h",
         }

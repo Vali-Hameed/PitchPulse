@@ -74,3 +74,30 @@ def test_scenario_5_hallucination_stress():
     assert ev.defenders_bypassed == 2
     assert s5.steps[0].forced_draft is not None
     assert "4 defenders" in s5.steps[0].forced_draft
+
+
+def test_orchestrator_badges_and_cultural_idioms():
+    import asyncio
+    from app.agents.orchestrator import AgentOrchestrator
+
+    async def _run():
+        orch = AgentOrchestrator()
+        s1 = build_scenario_1()
+        ev1 = s1.steps[0].event
+        m1 = MetricsEngine().compute(ev1)
+        ovl1 = await orch.run(ev1, m1, "line_breaking_pass")
+
+        assert "Difficulty" in ovl1.metrics_badge
+        assert "Dist" in ovl1.metrics_badge
+        assert set(ovl1.personas.translations.keys()) == {"en", "es", "ar", "ko", "fr", "pt", "de"}
+
+        s4 = build_scenario_4()
+        ev4 = s4.steps[0].event
+        m4 = MetricsEngine().compute(ev4)
+        ovl4 = await orch.run(ev4, m4, "goal_threat")
+
+        # Goal threat must have a distinct narrative from line-breaking pass
+        assert ovl4.personas.translations["en"]["headline"] != ovl1.personas.translations["en"]["headline"]
+        assert "106" in ovl4.personas.translations["de"]["headline"]
+
+    asyncio.run(_run())

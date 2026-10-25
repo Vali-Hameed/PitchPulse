@@ -180,6 +180,29 @@ class ControlRequest(BaseModel):
     speed: Optional[Literal[1, 2, 4]] = None
 
 
+class CustomEventIngestRequest(BaseModel):
+    """Custom synthetic telemetry event payload for live 5-stage pipeline ingestion."""
+
+    match_clock: Optional[str] = Field(default=None, description="Optional match clock override e.g. '71:40'")
+    event_type: Literal[
+        "pass", "shot", "tackle", "interception", "pressure", "carry", "turnover", "goal"
+    ] = "pass"
+    team: Literal["NLR", "MSB"] = "NLR"
+    actor_id: str = "NLR-8"
+    target_id: Optional[str] = "NLR-7"
+    start_x: float = Field(default=54.0, ge=0.0, le=105.0)
+    start_y: float = Field(default=32.0, ge=0.0, le=68.0)
+    end_x: float = Field(default=84.0, ge=0.0, le=105.0)
+    end_y: float = Field(default=46.0, ge=0.0, le=68.0)
+    ball_speed_kmh: float = Field(default=68.0, ge=0.0, le=140.0)
+    nearest_defender_dist_m: float = Field(default=0.8, ge=0.0, le=40.0)
+    defenders_bypassed: int = Field(default=3, ge=0, le=11)
+    forced_draft: Optional[str] = Field(
+        default=None,
+        description="Optional unverified LLM narrative draft to test the Studio Verifier hallucination guardrail.",
+    )
+
+
 class ScoreState(BaseModel):
     """Scoreboard state."""
 
