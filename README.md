@@ -1,7 +1,7 @@
-# PitchPulse Studio ⚽⚡
+# PitchPulse Studio
 
-> **Containerized Real-Time Match Intelligence & Multi-Agent Telemetry Engine**  
-> *Target Challenge: Microsoft & Premier League "Inside the Game: Developer Hackathon"*
+> **Containerized Real-Time Match Intelligence, Cultural Broadcast Adaptation & Multi-Agent Verification Engine**  
+> *Built for the Microsoft & Premier League "Inside the Game: Developer Hackathon"*
 
 [![Azure Container Apps](https://img.shields.io/badge/Azure-Container%20Apps-0078D4?logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/services/container-apps/)
 [![Azure OpenAI Service](https://img.shields.io/badge/Azure%20OpenAI-GPT--4o-008AD7?logo=openai&logoColor=white)](https://azure.microsoft.com/products/ai-services/openai-service/)
@@ -11,93 +11,110 @@
 
 ---
 
-## 1. Executive Summary & Problem Statement
+## 1. Executive Summary & Problem Positioning
 
-### The Problem
-Every generic hackathon entry pipes raw match event JSON into an unchecked LLM prompt, producing descriptive banalities (*"Player 8 made a pass"*) or generating ungrounded hallucinations (*"Arsenal haven't had a shot on target all half"* when they had three). Live television broadcasters (**Sky Sports, TNT Sports, Premier League Productions**) and global streaming platforms cannot put unverified AI on air. Factual inaccuracies destroy broadcast credibility.
+### Why Standard AI Match Commentary Fails in Live Broadcasts
+1. **Unverified Hallucinations Destroy Credibility:** Piping raw match event JSON into an unchecked LLM prompt yields factual hallucinations (*"bypassed 4 defenders"* when telemetry shows 2). Live broadcasters (**Sky Sports, TNT Sports, Premier League Productions**) cannot put unverified AI on air.
+2. **Literal Translation Feels Robotic:** Word-for-word translation fails global football fans. A viewer in Madrid expects *LaLiga* tactical radio cadence, a viewer in Munich expects *Bundesliga* `Halbraum` & `Gegenpressing` analysis, and a UK viewer expects *Monday Night Football* studio punditry.
+3. **One-Size-Fits-None Graphics:** Data-hungry tactical analysts, casual fans, club supporters, and single-metric trackers all receive the exact same static TV graphic.
 
-### The PitchPulse Solution: "Studio Receipts"
-**PitchPulse Studio** implements the mandatory 5-stage hackathon pipeline anchored by a deterministic spatial metrics engine and a 3-agent **Narrator-Verifier-Persona** architecture:
+### The PitchPulse Solution: Verifiable "Studio Receipts" & Cultural Personalization
+**PitchPulse Studio** is a production-ready **Obsidian Broadcast Studio** console that executes the mandatory 5-stage hackathon pipeline in real time—visibly illuminated on screen for every event:
 
-1. **Ingest (Stage 1):** Streams synthetic match events at 10Hz with 2D pitch coordinates via Server-Sent Events (SSE), backed by a deterministic Scenario Injector.
-2. **Interpret (Stage 2):** Deterministic Python mathematics computes spatial metrics without LLM speculation:
-   - Expected Threat Delta ($\Delta xT$) across an $8 \times 12$ calibrated grid
-   - Pass Difficulty & Pressure Index ($0-100\%$)
-   - Ball & Sprint Speeds ($km/h$)
-   - Rolling Control vs. Chaos Index ($0-100$)
-3. **Explain & Verify (Stage 3 — The Agentic Core):**
-   - **Narrator Agent (Azure OpenAI GPT-4o):** Formulates tactical explanations of why moments matter strictly from computed mathematical facts.
-   - **Studio Verifier Agent:** Cross-examines every entity name, metric, and spatial direction in the draft against ground-truth telemetry IDs. Emits a verifiable audit trail (`PASSED`) or triggers automated self-correction before emission.
-   - **Persona & Localization Router:** Simultaneously rewrites verified insights for **Tactical Analyst**, **Casual Fan**, and **Dynamic 22-Player Focus** viewing modes across **7 global broadcast languages**: English (EN), Spanish (ES), Arabic (AR), Korean (KO), French (FR), Portuguese (PT), and German (DE).
-4. **Render (Stage 4):** Emits standardized, frame-accurate Broadcast Overlay JSON payloads triggering television lower-third graphics over an interactive 2D HTML5 tactical pitch canvas with a 300ms jitter-proof LERP playback buffer, real-time **Voronoi pitch dominance space-control mesh**, and **Live Audio Commentary Synthesis**.
-5. **Personalize & Audit (Stage 5):** The client provides a clickable **Telemetry Receipts Drawer** displaying exact source Event IDs, defender distance vectors, and verification audit trails, an **AI Vision Auto-Eventing & Homography Inspector**, plus an instant **"Whole-Game Tactical Recap (1'-90')"** timeline generator.
+1. **Stage 1 — Ingest (`10Hz SSE + Custom JSON Ingest API`):** Streams 22-player synthetic tracking and ball physics at 10Hz via Server-Sent Events (`/api/stream`), backed by 5 deterministic scenario triggers and an interactive **Custom Synthetic Telemetry JSON Ingest Lab (`POST /api/events/ingest`)** that accepts external `.json` feeds or custom spatial coordinates on the fly.
+2. **Stage 2 — Interpret (`Deterministic Spatial Mathematics`):** Computes explainable football metrics in pure Python/NumPy without LLM guesswork:
+   - **Expected Threat Delta ($\Delta xT$)** across a calibrated $8 \times 12$ transition grid
+   - **Pass Difficulty Rating ($0\text{–}99$)** & **Spatial Pass Distance ($m$)**
+   - **Defender Pressure Index ($0\text{–}100\%$)** & **Ball/Sprint Velocity ($\text{km/h}$)**
+   - **Rolling Control vs. Chaos Index ($0\text{–}100$)** & **Final-Third Territory Dominance ($\%$)**
+3. **Stage 3 — Explain (`Agent 1: Azure OpenAI GPT-4o Narrator`):** Synthesizes causal explanations of *why* a moment matters strictly from computed spatial facts.
+4. **Stage 4 — Verify & Render (`Agent 2: Studio Verifier + TV Chyron`):** Cross-examines every numerical claim and entity in the draft against ground-truth telemetry before broadcast. If a discrepancy is detected, Agent 2 auto-corrects the copy and renders an **inline strikethrough diff** (`~Bypassed 4 defenders~ → 2`) directly on the main TV chyron and emits a machine-readable **Production Path Overlay Downlink JSON (`pl.studio.overlay.v2`)**.
+5. **Stage 5 — Personalize (`Agent 3: Cultural Broadcast Idiom & Lens Router`):** Simultaneously adapts verified intelligence across:
+   - **3 Viewing Modes:** `Tactical Analyst`, `Casual Fan`, and `Dynamic 22-Player Cam` (tailored to whichever of the 22 players the viewer selects on the pitch).
+   - **7 Cultural Broadcast Dialects:** Authentic regional idioms (UK *Sky MNF*, España/LatAm *Pizarra Táctica*, MENA *beIN Studio*, Korea *SPOTV*, France *Canal+*, Brasil *Mesa Tática*, DACH *Bundesliga Taktik-Feed*).
+   - **Club Perspective Lens (`ALL` / `NLR` / `MSB`) & Single Performance Metric Lens (`ΔxT` / `Pass Difficulty` / `Pressure` / `Speed`)**.
 
 ---
 
-## 2. Cloud Architecture Diagram
+## 2. Alignment with Official Hackathon Judging Rubric
+
+| Judging Criterion (20% Each) | How PitchPulse Studio Delivers |
+|---|---|
+| **1. Technological Implementation (20%)** | Containerized FastAPI + Next.js 14 architecture with 10Hz SSE fanout, 300ms LERP canvas interpolation, Azure OpenAI GPT-4o integration with `<2.5s` SLA fallback, automated pytest suite, and one-command Azure Container Apps (`infra/deploy-aca.ps1`) deployment. |
+| **2. Agentic Design & Innovation (20%)** | 3-Agent **Narrator → Studio Verifier → Cultural Persona Router** pipeline. The Studio Verifier deterministically intercepts and auto-corrects LLM hallucinations before broadcast, exposing both an inline strikethrough diff and a cryptographic-style telemetry audit receipt. |
+| **3. Real-World Impact & Applicability (20%)** | Solves the #1 barrier preventing live sports broadcasters from adopting Generative AI (on-air factual reliability) while emitting machine-readable `pl.studio.overlay.v2` JSON ready for Vizrt / Ross Video / HTML5 production graphics pipelines. |
+| **4. User Experience & Presentation (20%)** | High-craft **Obsidian Broadcast Studio** UI featuring a live 5-Stage Pipeline Visualizer strip, TV Split Scorebug, regulation FIFA 2D slate-turf pitch with Voronoi space control & xT heatmaps, F1-style linear telemetry instruments, and multilingual Web Speech synthesis. |
+| **5. Adherence to Hackathon Category (20%)** | 100% synthetic, trademark-clean Premier League studio engine implementing all 5 pipeline stages, Pass Difficulty/Distance ratings, AI Vision Homography auto-eventing (`/api/vision/inspect`), 30-second catch-up recaps, and multi-dimensional fan personalization. |
+
+---
+
+## 3. Cloud & Multi-Agent Architecture
 
 ```mermaid
 flowchart TB
     subgraph Azure["Microsoft Azure Cloud Infrastructure"]
         subgraph ACA["Azure Container Apps Managed Environment"]
             subgraph BackendContainer["pitchpulse-backend (FastAPI :8000)"]
-                GEN["Stage 1: Pitch Simulator & Scenarios<br/>10Hz Physics & 1Hz Event Stream"]
-                ENG["Stage 2: Deterministic Metrics Engine<br/>xT Grid, Pressure Index, Chaos Math"]
-                ORCH["Stage 3: Multi-Agent Orchestrator"]
-                SSE["High-Performance SSE Hub<br/>Async Broadcast Fanout"]
+                GEN["Stage 1: 10Hz Pitch Simulator &<br/>POST /api/events/ingest (Custom JSON)"]
+                ENG["Stage 2: Deterministic Metrics Engine<br/>ΔxT, Pass Difficulty (0-99), Dist (m), Chaos"]
+                ORCH["Stages 3-5: Multi-Agent Orchestrator<br/>Narrator → Verifier → Cultural Router"]
+                SSE["High-Performance SSE Hub (:8000/api/stream)"]
                 
                 GEN --> ENG
-                ENG -->|Key Moment Trigger| ORCH
+                ENG -->|Key Moment / Custom Ingest| ORCH
                 ENG -->|10Hz Frame / 1Hz Tick| SSE
             end
 
             subgraph FrontendContainer["pitchpulse-frontend (Next.js 14 :3000)"]
-                CANVAS["PitchCanvas.tsx<br/>300ms LERP Playback Buffer & HUD"]
-                OVERLAY["BroadcastOverlay.tsx<br/>Lower-Third TV Graphic & Status"]
-                FEED["PersonaFeed.tsx<br/>Analyst / Casual / Vance · EN/ES/AR"]
-                DRAWER["ReceiptsDrawer.tsx<br/>Telemetry Audit & Ground Truth Table"]
-                RECAP["CatchUpModal.tsx<br/>30-Second AI Match Summary"]
+                STRIP["PipelineStatusStrip.tsx<br/>Live 5-Stage Telemetry Visualizer"]
+                CANVAS["PitchCanvas.tsx<br/>FIFA Slate-Turf, Voronoi & 22-Player Cam"]
+                OVERLAY["BroadcastOverlay.tsx<br/>TV Chyron & Inline Hallucination Diff"]
+                FEED["PersonaFeed.tsx<br/>7 Cultural Dialects · Club & Metric Lenses"]
+                DRAWER["ReceiptsDrawer.tsx<br/>Audit Table & Production Downlink JSON"]
+                INGEST["TelemetryIngestModal.tsx<br/>External JSON Upload & Verifier Lab"]
             end
         end
 
         subgraph AzureAI["Azure AI Services"]
-            AOAI["Azure OpenAI Service<br/>(Deployment: GPT-4o)"]
+            AOAI["Azure OpenAI Service (GPT-4o)"]
         end
     end
 
-    ORCH <-->|Zero-Hallucination Causal Prompts| AOAI
-    ORCH -->|Verified Broadcast Overlay| SSE
-    SSE ==>|Persistent SSE Stream :8000/api/stream| CANVAS
-    SSE ==>|State Updates & Receipts| OVERLAY
-    SSE ==>|Broadcast Feed| FEED
+    ORCH <-->|Causal & Cultural Idiom Prompts| AOAI
+    ORCH -->|Verified BroadcastOverlayPayload| SSE
+    SSE ==>|Persistent SSE Stream| STRIP
+    SSE ==>|10Hz LERP Frames| CANVAS
+    SSE ==>|Verified Chyron & Diff| OVERLAY
+    SSE ==>|Personalized Feed| FEED
+    INGEST ==>|POST /api/events/ingest| GEN
 ```
 
 ---
 
-## 3. The Narrator-Verifier Guardrail Pattern
+## 4. The Narrator–Verifier Guardrail Pattern
 
-Broadcasters require mathematically verifiable confidence before any graphic hits the television screen. PitchPulse Studio enforces an audit loop:
+Broadcasters require mathematically verifiable confidence before any graphic hits the television screen. PitchPulse Studio enforces a deterministic audit loop:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Engine as Deterministic Physics Engine
-    participant Narrator as Agent 1: Narrator (Azure GPT-4o)
-    participant Verifier as Agent 2: Studio Verifier
-    participant Router as Agent 3: Persona Router
-    participant Broadcast as Master Broadcast Deck
+    participant Ingest as Stage 1-2: Telemetry & Math Engine
+    participant Narrator as Stage 3: Agent 1 (Narrator GPT-4o)
+    participant Verifier as Stage 4: Agent 2 (Studio Verifier)
+    participant Router as Stage 5: Agent 3 (Cultural Router)
+    participant Broadcast as On-Air TV Chyron & Feed
 
-    Engine->>Narrator: Raw Event & Computed Metrics (e.g. Bypassed=2, xT=+0.34)
-    Narrator->>Verifier: Draft Narrative (Asserts: "Bypassed 4 defenders...")
-    Note over Verifier: Cross-examines assertions against ground truth telemetry IDs
-    alt Assertion matches ground truth
+    Ingest->>Narrator: Event + Computed Math (Bypassed=2, ΔxT=+0.34, Difficulty=89/99)
+    Narrator->>Verifier: Draft Narrative (Claims: "Bypassed 4 defenders...")
+    Note over Verifier: Audits claims against Euclidean ground-truth telemetry
+    alt All claims match ground truth
         Verifier->>Router: Verified Narrative (Confidence: 100%, Status: MATCH)
-    else Mismatch / Hallucination Detected
-        Note over Verifier: Replaces 4 with 2, flags status=CORRECTED in Receipt
-        Verifier->>Router: Auto-Corrected Narrative + Audit Receipt
+    else Hallucination / Discrepancy Detected
+        Note over Verifier: Auto-corrects 4 → 2, logs claim diff in VerificationReceipt
+        Verifier->>Router: Auto-Corrected Narrative + Intercepted Claim Diff
     end
-    Router->>Broadcast: BroadcastOverlayPayload (Analyst / Casual / Vance in EN/ES/AR)
-    Broadcast-->>Broadcast: Lower-third graphic & Telemetry Receipts Drawer
+    Router->>Broadcast: 7 Cultural Broadcast Dialects × 3 Personas + Production Sync JSON
+    Broadcast-->>Broadcast: Renders inline strikethrough diff (~4~ → 2) & Audit Receipt
 ```
 
 ### Deterministic Metric Formulas
@@ -108,26 +125,26 @@ $$\text{Pressure Index} = \min\left(100.0, \max\left(0.0, 100.0 \times \exp(-0.4
 
 $$\text{Pass Difficulty} = \min\left(99.0, \max\left(5.0, 0.35 \cdot P + 0.30 \cdot \left(\frac{D}{45} \cdot 100\right) + 0.25 \cdot (B \cdot 22) + 0.10 \cdot S\right)\right)$$
 
-Where $P$ is Pressure Index, $D$ is distance in meters, $B$ is defenders bypassed, $S$ is ball speed ($\text{km/h}$), and $d_{\text{def}}$ is nearest defender distance in meters.
+Where $P$ is Pressure Index ($0\text{–}100\%$), $D$ is spatial pass distance in meters, $B$ is defenders bypassed, $S$ is ball speed ($\text{km/h}$), and $d_{\text{def}}$ is nearest defender distance in meters.
 
 ---
 
-## 4. Strict Trademark & Fictional Clubs Compliance
+## 5. Strict Trademark & Synthetic Data Compliance
 
-Per hackathon guidelines, all team names, player likenesses, and club crests are 100% fictional:
+Per hackathon rules, all match telemetry is 100% synthetic and all club/player identities are fictional:
 
-| Club Identity | Color Tokens | Formation | Star Player (Player-Cam) |
+| Club Identity | Color Tokens | Tactical Setup | Spotlight Star (22-Player Cam) |
 |---|---|---|---|
-| **North London Red (NLR)** | `#EF4444` (Crimson), `#FFFFFF` | 4-3-3 Attacking | **#8 Marcus Vance** (Playmaker / AM) |
-| **Merseyside Blue (MSB)** | `#3B82F6` (Royal Blue), `#FACC15` | 4-3-3 Mid-Block | **#9 D. Calvert-Sim** (CF) |
+| **North London Red (NLR)** | `#E11D48` (Crimson) | 4-3-3 High Possession | **#8 M. Vance-Sim** (Playmaker / AM) |
+| **Merseyside Blue (MSB)** | `#2563EB` (Royal Cobalt) | 4-3-3 Compact Mid-Block | **#9 D. Calvert-Sim** (Center Forward / CF) |
 
 ---
 
-## 5. Local Setup & Docker Deployment
+## 6. Quick Start & Docker Deployment
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
-- (Optional) Azure OpenAI Service API Key and Endpoint if running live GPT-4o calls.
+- *(Optional)* Azure OpenAI Service API Key and Endpoint for live GPT-4o generation (runs out-of-the-box with zero configuration using the deterministic cultural engine if omitted).
 
 ### Single-Command Launch
 ```bash
@@ -135,34 +152,32 @@ Per hackathon guidelines, all team names, player likenesses, and club crests are
 git clone https://github.com/Vali-Hameed/PitchPulse.git
 cd PitchPulse
 
-# (Optional) Provide Azure OpenAI credentials
+# (Optional) Configure Azure OpenAI credentials
 cp backend/.env.example backend/.env
-# Edit backend/.env if you have Azure keys; otherwise local deterministic fallback runs instantly!
 
-# Build and start containerized frontend & backend
-docker compose up --build
+# Build and start containerized frontend (:3000) & backend (:8000)
+docker compose up --build -d
 ```
 
-- **Frontend Broadcast Deck:** [http://localhost:3000](http://localhost:3000)
-- **FastAPI SSE & REST API:** [http://localhost:8000](http://localhost:8000)
+- **Studio Broadcast Deck:** [http://localhost:3000](http://localhost:3000)
+- **FastAPI SSE & Telemetry API:** [http://localhost:8000](http://localhost:8000)
+- **Custom Event Ingest Endpoint:** `POST http://localhost:8000/api/events/ingest`
 - **Engine Health Endpoint:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
-### Running Automated Test Suite Inside Container
+### Running the Automated Test Suite
 ```bash
-docker compose run --rm backend pytest
+docker compose exec backend pytest
 ```
 
 ---
 
-## 6. Azure Container Apps (ACA) Deployment Guide
+## 7. Azure Container Apps (ACA) Cloud Deployment
 
-PitchPulse Studio includes an automated PowerShell script (`infra/deploy-aca.ps1`) for single-command deployment to Microsoft Azure:
+PitchPulse Studio includes an automated PowerShell deployment script (`infra/deploy-aca.ps1`) for Microsoft Azure:
 
 ```powershell
-# Authenticate with Azure CLI
 az login
 
-# Run automated deployment
 ./infra/deploy-aca.ps1 `
     -ResourceGroup "rg-pitchpulse-studio" `
     -Location "westus3" `
@@ -171,13 +186,7 @@ az login
     -AzureOpenAiDeployment "gpt-4o"
 ```
 
-The script automatically:
-1. Provisions Azure Container Registry (ACR) and ACA Managed Environment.
-2. Builds and pushes production container images.
-3. Sets up HTTPS ingress for both services and wires CORS.
-4. Outputs the public live broadcast control deck URL.
-
 ---
 
-## 7. License & Fair Play
-Built strictly for the Microsoft & Premier League "Inside the Game: Developer Hackathon". Uses 100% synthetic football telemetry, fictional player likenesses, and custom mathematical models. Distributed under the MIT License.
+## 8. License
+Built for the Microsoft & Premier League *"Inside the Game: Developer Hackathon"*. Distributed under the MIT License.
