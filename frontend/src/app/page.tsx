@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { TopControlBar } from "@/components/TopControlBar";
+import { PipelineStatusStrip } from "@/components/PipelineStatusStrip";
 import { PitchCanvas } from "@/components/PitchCanvas";
 import { BroadcastOverlay } from "@/components/BroadcastOverlay";
 import { MomentumGauge } from "@/components/MomentumGauge";
@@ -9,6 +10,7 @@ import { PersonaFeed } from "@/components/PersonaFeed";
 import { ReceiptsDrawer } from "@/components/ReceiptsDrawer";
 import { CatchUpModal } from "@/components/CatchUpModal";
 import { VisionInspectorModal } from "@/components/VisionInspectorModal";
+import { TelemetryIngestModal } from "@/components/TelemetryIngestModal";
 import { useMatchStream } from "@/hooks/useMatchStream";
 import {
   BroadcastOverlayPayload,
@@ -29,6 +31,7 @@ export default function BroadcastControlDeckPage() {
     frameBufferRef,
     control,
     injectScenario,
+    ingestCustomEvent,
     fetchRecap,
   } = useMatchStream();
 
@@ -38,6 +41,7 @@ export default function BroadcastControlDeckPage() {
   const [inspectedOverlay, setInspectedOverlay] = useState<BroadcastOverlayPayload | null>(null);
   const [isRecapOpen, setIsRecapOpen] = useState<boolean>(false);
   const [isVisionOpen, setIsVisionOpen] = useState<boolean>(false);
+  const [isIngestOpen, setIsIngestOpen] = useState<boolean>(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
 
   // Persistent refs for bulletproof Web Speech API audio lifecycle & GC protection
@@ -203,12 +207,23 @@ export default function BroadcastControlDeckPage() {
         onInject={injectScenario}
         onOpenRecap={() => setIsRecapOpen(true)}
         onOpenVision={() => setIsVisionOpen(true)}
+        onOpenIngest={() => setIsIngestOpen(true)}
       />
 
       {/* 2. Master Broadcast Layout Grid */}
       <div className="flex-1 p-3 md:p-4 max-w-[1780px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
-        {/* Left Column: Interactive 2D Pitch Canvas + Television Lower-Third Chyron + Linear Telemetry */}
-        <section className="lg:col-span-8 flex flex-col gap-3.5">
+        {/* Left Column: 5-Stage Pipeline Strip + Interactive 2D Pitch Canvas + TV Chyron + Linear Telemetry */}
+        <section className="lg:col-span-8 flex flex-col gap-3">
+          {/* Live 5-Stage Telemetry & Multi-Agent Pipeline Visualizer */}
+          <PipelineStatusStrip
+            latestTick={latestTick}
+            activeOverlay={activeOverlay}
+            selectedPersona={selectedPersona}
+            selectedLanguage={selectedLanguage}
+            onOpenReceipts={(ovl) => setInspectedOverlay(ovl)}
+            onOpenIngest={() => setIsIngestOpen(true)}
+          />
+
           {/* Pitch Container with Embedded Lower-Third Broadcast Chyron */}
           <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#07080A]">
             <PitchCanvas
@@ -225,6 +240,7 @@ export default function BroadcastControlDeckPage() {
               overlay={activeOverlay}
               selectedPersona={selectedPersona}
               selectedLanguage={selectedLanguage}
+              selectedPlayerId={selectedPlayerId}
               onOpenReceipts={(ovl) => setInspectedOverlay(ovl)}
             />
           </div>
@@ -268,6 +284,13 @@ export default function BroadcastControlDeckPage() {
       <VisionInspectorModal
         isOpen={isVisionOpen}
         onClose={() => setIsVisionOpen(false)}
+      />
+
+      {/* 6. Custom Synthetic Telemetry JSON Ingest & Verifier Lab Modal */}
+      <TelemetryIngestModal
+        isOpen={isIngestOpen}
+        onClose={() => setIsIngestOpen(false)}
+        onIngest={ingestCustomEvent}
       />
     </main>
   );

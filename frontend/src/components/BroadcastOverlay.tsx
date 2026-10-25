@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
 import {
+  ALL_PLAYERS,
   BroadcastOverlayPayload,
   LanguageCode,
   PersonaMode,
@@ -12,6 +13,7 @@ interface BroadcastOverlayProps {
   overlay: BroadcastOverlayPayload | null;
   selectedPersona: PersonaMode;
   selectedLanguage: LanguageCode;
+  selectedPlayerId?: string;
   onOpenReceipts: (overlay: BroadcastOverlayPayload) => void;
 }
 
@@ -19,6 +21,7 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
   overlay,
   selectedPersona,
   selectedLanguage,
+  selectedPlayerId,
   onOpenReceipts,
 }) => {
   const [visible, setVisible] = useState<boolean>(false);
@@ -28,7 +31,7 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
       setVisible(true);
       const timer = setTimeout(() => {
         setVisible(false);
-      }, 10000);
+      }, 12000);
       return () => clearTimeout(timer);
     } else {
       setVisible(false);
@@ -39,11 +42,24 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
 
   const translations = overlay.personas?.translations || {};
   const currentLangPack = translations[selectedLanguage] || translations["en"] || {};
-  const subtext = currentLangPack[selectedPersona] || overlay.subtext;
+  let subtext = currentLangPack[selectedPersona] || overlay.subtext;
   const headline = currentLangPack.headline || overlay.headline;
   const isArabic = selectedLanguage === "ar";
 
+  // Dynamically adapt Player-Focus copy if viewer selected a specific player on the 22-player cam
+  if (selectedPersona === "player_focus" && selectedPlayerId) {
+    const focusedPlayer = ALL_PLAYERS.find((p) => p.id === selectedPlayerId);
+    const targetId = overlay.personas?.player_cam_target_id;
+    if (focusedPlayer && targetId && focusedPlayer.id !== targetId) {
+      const cleanName = focusedPlayer.name.replace("-Sim", "");
+      subtext = `[#${focusedPlayer.number} ${cleanName} (${focusedPlayer.role}) Spotlight] Off-ball spatial synchronization: maintains tactical compactness while ${subtext}`;
+    }
+  }
+
   const isCorrected = overlay.verification?.correction_applied;
+  const correctedClaims = (overlay.verification?.checked_claims || []).filter(
+    (c) => c.status === "CORRECTED"
+  );
 
   const getOverlayLabel = (type: string) => {
     switch (type) {
@@ -69,7 +85,7 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
       }`}
     >
       <div
-        className={`bg-[#090A0E]/94 border border-white/10 rounded-xl p-3.5 shadow-2xl backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 relative overflow-hidden`}
+        className="bg-[#090A0E]/94 border border-white/10 rounded-xl p-3.5 shadow-2xl backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 relative overflow-hidden"
         dir={isArabic ? "rtl" : "ltr"}
       >
         {/* Left Vertical TV Chyron Accent Blade */}
@@ -80,9 +96,9 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
         />
 
         {/* Content Body */}
-        <div className="flex-1 space-y-1 pl-2">
-          {/* Top Line: Badge, Clock, Correction Status */}
-          <div className="flex items-center gap-2">
+        <div className="flex-1 space-y-1.5 pl-2">
+          {/* Top Line: Badge, Clock, Inline Hallucination Diff */}
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[9px] font-mono font-bold tracking-widest px-2 py-0.5 rounded bg-white/[0.06] border border-white/10 text-zinc-300 uppercase">
               {getOverlayLabel(overlay.overlay_type)}
             </span>
@@ -92,10 +108,23 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
             </span>
 
             {isCorrected && (
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-600/80 text-amber-300 font-bold flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                AUTO-CORRECTED // GROUNDED
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/85 border border-amber-500/70 text-amber-200 font-semibold">
+                <AlertCircle className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>VERIFIER INTERCEPTED:</span>
+                {correctedClaims.length > 0 ? (
+                  correctedClaims.map((c, idx) => (
+                    <span key={idx} className="inline-flex items-center gap-1">
+                      <span className="line-through text-rose-400 opacity-90">{c.claim}</span>
+                      <span className="text-zinc-400">→</span>
+                      <span className="text-emerald-400 font-bold">
+                        {String(c.ground_truth)} ({c.metric_name.replace(/_/g, " ")})
+                      </span>
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-emerald-400 font-bold">Auto-Grounded to Telemetry</span>
+                )}
+              </div>
             )}
           </div>
 
@@ -110,7 +139,7 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
           </p>
 
           {/* Tabular Metric Chips */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
             {Object.entries(overlay.metrics_badge || {}).map(([key, val]) => (
               <div
                 key={key}
@@ -140,7 +169,7 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             )}
             <span>
-              {isCorrected ? "Auto-Corrected Receipt" : "Verified Receipt"}
+              {isCorrected ? "Inspect Diff & Receipt" : "Verified Receipt"}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
           </button>

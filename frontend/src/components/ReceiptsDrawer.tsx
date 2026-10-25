@@ -1,11 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   AlertTriangle,
+  Check,
   CheckCircle2,
   Code2,
+  Copy,
   FileText,
+  Radio,
   ShieldAlert,
   ShieldCheck,
   X,
@@ -18,6 +21,8 @@ interface ReceiptsDrawerProps {
 }
 
 export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose }) => {
+  const [copied, setCopied] = useState<boolean>(false);
+
   if (!overlay) return null;
 
   const receipt = overlay.verification;
@@ -25,8 +30,43 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
   const initialDraft = overlay.draft_narrative || overlay.subtext;
   const verifiedNarrative = overlay.verified_narrative || overlay.subtext;
 
+  // Machine-readable Production Broadcast Downlink Schema (Req i.d)
+  const productionDownlinkPayload = {
+    schema_version: "pl.studio.overlay.v2",
+    overlay_id: overlay.overlay_id,
+    timecode_match_clock: overlay.match_clock,
+    render_target: "HTML5_VIZRT_LOWER_THIRD_CHYRON",
+    sync_frame_buffer_ms: 300,
+    graphic_template: overlay.overlay_type.toUpperCase(),
+    spatial_vector_meters: overlay.vector_coords,
+    highlight_tracklet_ids: overlay.highlight_player_ids,
+    telemetry_badges: overlay.metrics_badge,
+    on_air_copy: {
+      headline: overlay.headline,
+      verified_subtext: verifiedNarrative,
+      localized_streams: Object.keys(overlay.personas?.translations || {}),
+    },
+    verification_seal: {
+      grounded: receipt?.verified ?? true,
+      confidence_score: receipt?.confidence_score ?? 1.0,
+      auto_corrected: isCorrected ?? false,
+      source_event_ids: receipt?.source_event_ids || [],
+    },
+  };
+
+  const handleCopyDownlink = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(JSON.stringify(productionDownlinkPayload, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all animate-fade-in"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-xl bg-[#090A0E] border-l border-white/10 h-full overflow-y-auto p-5 text-[#F4F4F6] flex flex-col gap-4 shadow-2xl custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
@@ -45,7 +85,7 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
                 </span>
               </h2>
               <p className="text-[11px] text-zinc-400 font-sans">
-                Mathematical Verification Audit Trail
+                Mathematical Verification Audit Trail & Production Overlay Spec
               </p>
             </div>
           </div>
@@ -163,6 +203,37 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
           </div>
         </div>
 
+        {/* Production Broadcast Graphic Sync Schema (Vizrt / HTML5 Downlink Spec) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-wider">
+              <Radio className="w-3.5 h-3.5 text-studio-gold" />
+              <span>Production Path Overlay Downlink JSON</span>
+            </div>
+
+            <button
+              onClick={handleCopyDownlink}
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#14171D] hover:bg-[#1C2029] border border-white/10 text-[10px] font-mono text-zinc-200 transition-colors"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  <span className="text-emerald-400">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3 text-zinc-400" />
+                  <span>Copy Broadcast JSON</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <pre className="bg-[#07080A] border border-white/10 rounded-lg p-3 font-mono text-[11px] text-zinc-300 overflow-x-auto custom-scrollbar max-h-48">
+            {JSON.stringify(productionDownlinkPayload, null, 2)}
+          </pre>
+        </div>
+
         {/* Raw Telemetry JSON Snapshot */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-wider">
@@ -170,7 +241,7 @@ export const ReceiptsDrawer: React.FC<ReceiptsDrawerProps> = ({ overlay, onClose
             <span>Raw Ingest Vector Snapshot</span>
           </div>
 
-          <pre className="bg-[#07080A] border border-white/10 rounded-lg p-3 font-mono text-[11px] text-zinc-300 overflow-x-auto custom-scrollbar">
+          <pre className="bg-[#07080A] border border-white/10 rounded-lg p-3 font-mono text-[11px] text-zinc-300 overflow-x-auto custom-scrollbar max-h-48">
             {JSON.stringify(receipt?.raw_telemetry_snapshot || {}, null, 2)}
           </pre>
         </div>

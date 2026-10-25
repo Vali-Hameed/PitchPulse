@@ -254,3 +254,35 @@ export interface HealthResponse {
   grounded_pct: number;
   uptime_s: number;
 }
+
+export type MetricLens = "all" | "xt" | "difficulty" | "pressure" | "speed";
+export type ClubLens = "ALL" | "NLR" | "MSB";
+
+export interface CustomEventIngestRequest {
+  match_clock?: string | null;
+  event_type: EventType;
+  team: TeamCode;
+  actor_id: string;
+  target_id?: string | null;
+  start_x: number;
+  start_y: number;
+  end_x: number;
+  end_y: number;
+  ball_speed_kmh: number;
+  nearest_defender_dist_m: number;
+  defenders_bypassed: number;
+  forced_draft?: string | null;
+}
+
+export const CULTURAL_DIALECT_LABELS: Record<
+  LanguageCode,
+  { region: string; dialect: string }
+> = {
+  en: { region: "UK / Global", dialect: "Sky MNF Tactical Punditry" },
+  es: { region: "España / LatAm", dialect: "Pizarra & Radio Táctica LaLiga" },
+  ar: { region: "MENA", dialect: "استوديو تحليلي عربي (beIN Style)" },
+  ko: { region: "Korea", dialect: "SPOTV K-택틱스 생중계" },
+  fr: { region: "France", dialect: "Palette Tactique Canal+" },
+  pt: { region: "Brasil / PT", dialect: "Mesa Tática Brasileirão" },
+  de: { region: "DACH", dialect: "Bundesliga Halbraum & Gegenpressing" },
+};

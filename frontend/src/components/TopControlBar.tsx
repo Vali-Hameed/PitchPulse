@@ -7,6 +7,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Camera,
+  Code2,
   Volume2,
   VolumeX,
   Target,
@@ -27,6 +28,7 @@ interface TopControlBarProps {
   onInject: (scenarioId: string) => void;
   onOpenRecap: () => void;
   onOpenVision: () => void;
+  onOpenIngest: () => void;
 }
 
 export const TopControlBar: React.FC<TopControlBarProps> = ({
@@ -42,6 +44,7 @@ export const TopControlBar: React.FC<TopControlBarProps> = ({
   onInject,
   onOpenRecap,
   onOpenVision,
+  onOpenIngest,
 }) => {
   const modelMode = health?.model_mode || "Deterministic Engine";
   const isAzure = modelMode.includes("Azure");
@@ -139,6 +142,16 @@ export const TopControlBar: React.FC<TopControlBarProps> = ({
               <span>VERIFIER: 100%</span>
             </div>
           </div>
+
+          {/* Custom Synthetic JSON Ingest Button */}
+          <button
+            onClick={onOpenIngest}
+            className="flex items-center gap-1.5 bg-[#14171D] hover:bg-[#1A1F27] border border-white/10 hover:border-white/20 text-zinc-200 hover:text-white font-sans font-semibold px-3 py-1.5 rounded-md text-xs transition-all active:scale-95"
+            title="Ingest custom synthetic match JSON or test Verifier hallucination guardrails"
+          >
+            <Code2 className="w-3.5 h-3.5 text-studio-gold" />
+            <span>Ingest JSON</span>
+          </button>
 
           {/* Vision AI Inspector Button */}
           <button

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   BroadcastOverlayPayload,
+  CustomEventIngestRequest,
   FramePayload,
   HealthResponse,
   LanguageCode,
@@ -191,6 +192,34 @@ export function useMatchStream() {
     }
   }, []);
 
+  const ingestCustomEvent = useCallback(
+    async (payload: CustomEventIngestRequest): Promise<BroadcastOverlayPayload | null> => {
+      try {
+        frameBufferRef.current = [];
+        const res = await fetch(`${API_BASE}/api/events/ingest`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.overlay) {
+            setActiveOverlay(data.overlay);
+            setOverlayHistory((prev) => [
+              data.overlay,
+              ...prev.filter((o) => o.overlay_id !== data.overlay.overlay_id),
+            ]);
+            return data.overlay;
+          }
+        }
+      } catch (err) {
+        console.error("Custom event ingest failed", err);
+      }
+      return null;
+    },
+    []
+  );
+
   const fetchRecap = useCallback(
     async (
       persona: PersonaMode,
@@ -223,6 +252,7 @@ export function useMatchStream() {
     frameBufferRef,
     control,
     injectScenario,
+    ingestCustomEvent,
     fetchRecap,
     setActiveOverlay,
   };
