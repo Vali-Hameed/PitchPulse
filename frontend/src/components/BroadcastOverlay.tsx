@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
 import {
   BroadcastOverlayPayload,
   LanguageCode,
@@ -26,7 +26,6 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
   useEffect(() => {
     if (overlay) {
       setVisible(true);
-      // Auto-hide lower-third after 10 seconds of idle display
       const timer = setTimeout(() => {
         setVisible(false);
       }, 10000);
@@ -38,7 +37,6 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
 
   if (!overlay || !visible) return null;
 
-  // Retrieve persona and language localized text
   const translations = overlay.personas?.translations || {};
   const currentLangPack = translations[selectedLanguage] || translations["en"] || {};
   const subtext = currentLangPack[selectedPersona] || overlay.subtext;
@@ -47,102 +45,104 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
 
   const isCorrected = overlay.verification?.correction_applied;
 
-  const getOverlayBadgeColor = (type: string) => {
+  const getOverlayLabel = (type: string) => {
     switch (type) {
       case "goal_threat":
-        return "bg-rose-600 text-white border-rose-400";
+        return "GOAL THREAT SEQUENCE";
       case "line_breaking_pass":
-        return "bg-cyan-600 text-white border-cyan-400";
+        return "LINE-BREAKING PASS";
       case "high_press_turnover":
-        return "bg-emerald-600 text-white border-emerald-400";
+        return "HIGH PRESS TURNOVER";
       case "chaos_surge":
-        return "bg-amber-600 text-white border-amber-400";
+        return "CHAOS TRANSITION";
       case "sprint_alert":
-        return "bg-purple-600 text-white border-purple-400";
+        return "RAPID SPRINT BURST";
       default:
-        return "bg-slate-700 text-white border-slate-500";
+        return type.replace(/_/g, " ").toUpperCase();
     }
   };
 
   return (
     <div
-      className={`absolute bottom-3 left-4 right-4 z-20 transition-all duration-500 transform ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0 pointer-events-none"
+      className={`absolute bottom-3 left-4 right-4 z-20 transition-all duration-300 transform ${
+        visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
       }`}
     >
       <div
-        className={`bg-slate-950/95 border-2 rounded-xl p-3.5 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
-          isCorrected
-            ? "border-amber-500/80 shadow-amber-950/50"
-            : "border-cyan-500/60 shadow-cyan-950/50"
-        }`}
+        className={`bg-[#090A0E]/94 border border-white/10 rounded-xl p-3.5 shadow-2xl backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 relative overflow-hidden`}
         dir={isArabic ? "rtl" : "ltr"}
       >
-        {/* Left: Event Tag, Headline, Subtext */}
-        <div className="flex-1 space-y-1">
+        {/* Left Vertical TV Chyron Accent Blade */}
+        <div
+          className={`absolute left-0 top-0 bottom-0 w-1 ${
+            isCorrected ? "bg-amber-400" : "bg-studio-gold"
+          }`}
+        />
+
+        {/* Content Body */}
+        <div className="flex-1 space-y-1 pl-2">
+          {/* Top Line: Badge, Clock, Correction Status */}
           <div className="flex items-center gap-2">
-            <span
-              className={`text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded border shadow-sm ${getOverlayBadgeColor(
-                overlay.overlay_type
-              )}`}
-            >
-              {overlay.overlay_type.replace(/_/g, " ")}
+            <span className="text-[9px] font-mono font-bold tracking-widest px-2 py-0.5 rounded bg-white/[0.06] border border-white/10 text-zinc-300 uppercase">
+              {getOverlayLabel(overlay.overlay_type)}
             </span>
-            <span className="text-xs font-mono text-amber-400 font-bold">
-              Min {overlay.match_clock}
+
+            <span className="text-xs font-mono text-studio-gold font-bold tabular-nums">
+              MIN {overlay.match_clock}
             </span>
+
             {isCorrected && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 border border-amber-500 text-amber-300 font-bold flex items-center gap-1">
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-600/80 text-amber-300 font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
-                AUTO-CORRECTED
+                AUTO-CORRECTED // GROUNDED
               </span>
             )}
           </div>
 
-          <h3 className="text-sm md:text-base font-black text-white tracking-tight line-clamp-1">
+          {/* Headline in Space Grotesk */}
+          <h3 className="text-sm md:text-base font-display font-bold text-white tracking-tight line-clamp-1">
             {headline}
           </h3>
 
-          <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+          {/* Narrative in Inter */}
+          <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed font-sans">
             {subtext}
           </p>
 
-          {/* Metrics Pills */}
+          {/* Tabular Metric Chips */}
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {Object.entries(overlay.metrics_badge || {}).map(([key, val]) => (
               <div
                 key={key}
-                className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] text-slate-300"
+                className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#13161C] border border-white/10 font-mono text-[10px] text-zinc-300"
               >
-                <span className="text-slate-500 uppercase">{key}:</span>
-                <span className="text-cyan-300 font-bold">{val}</span>
+                <span className="text-zinc-500 uppercase">{key}:</span>
+                <span className="text-zinc-100 font-bold tabular-nums">{val}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Right: Studio Verifier Verification Receipt Trigger */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-800">
+        {/* Right: Authoritative Verification Receipt Trigger */}
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-white/10 shrink-0">
           <button
             onClick={() => onOpenReceipts(overlay)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-xs font-bold transition-all shadow-lg active:scale-95 whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition-all shadow-md active:scale-95 whitespace-nowrap border ${
               isCorrected
-                ? "bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400 text-amber-300 shadow-amber-900/30"
-                : "bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400 text-emerald-300 shadow-emerald-900/30"
+                ? "bg-[#181510] hover:bg-[#221C14] border-amber-500/40 text-amber-300"
+                : "bg-[#12151B] hover:bg-[#1A1E26] border-white/15 text-zinc-200 hover:text-white"
             }`}
             title="Inspect raw telemetry vectors, defender distances, and claim audit logs"
           >
             {isCorrected ? (
-              <AlertCircle className="w-4 h-4 text-amber-400" />
+              <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
             ) : (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             )}
             <span>
-              {isCorrected
-                ? "AUTO-CORRECTED BY STUDIO AGENT"
-                : "VERIFIED BY STUDIO AGENT"}
+              {isCorrected ? "Auto-Corrected Receipt" : "Verified Receipt"}
             </span>
-            <span className="text-[10px] opacity-75 font-normal">(Receipts)</span>
+            <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
           </button>
         </div>
       </div>

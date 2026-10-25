@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Eye, Grid, Layers, Zap } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Grid, Layers, Zap } from "lucide-react";
 import {
   BroadcastOverlayPayload,
   FramePayload,
@@ -34,7 +34,6 @@ const XT_HEAT = [
 
 export const PitchCanvas: React.FC<PitchCanvasProps> = ({
   frameBufferRef,
-  latestTick,
   activeOverlay,
   isPlayerCamActive,
   selectedPlayerId,
@@ -44,7 +43,7 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
   const [showXtGrid, setShowXtGrid] = useState<boolean>(false);
   const [showVoronoi, setShowVoronoi] = useState<boolean>(false);
 
-  // Store the latest rendered player list for click-to-select detection
+  // Store latest rendered players for click detection
   const latestRenderedPlayersRef = useRef<PlayerPosition[]>([]);
 
   // Telemetry HUD state for active focused player
@@ -59,7 +58,7 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
     touches: 54,
   });
 
-  // Click-to-select player directly on canvas
+  // Click-to-select player directly on pitch
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -71,10 +70,9 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
     const pitchX = (clickCanvasX / canvas.width) * PITCH_LENGTH;
     const pitchY = (clickCanvasY / canvas.height) * PITCH_WIDTH;
 
-    // Search for closest player within 4.5 meters
     const players = latestRenderedPlayersRef.current;
     let closest: PlayerPosition | null = null;
-    let minDist = 4.5;
+    let minDist = 5.0;
 
     for (const p of players) {
       const d = Math.hypot(p.x - pitchX, p.y - pitchY);
@@ -108,28 +106,34 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
 
       ctx.clearRect(0, 0, width, height);
 
-      // Pitch background (Broadcast deep emerald grass)
-      const grad = ctx.createLinearGradient(0, 0, width, height);
-      grad.addColorStop(0, "#064e3b");
-      grad.addColorStop(0.5, "#065f46");
-      grad.addColorStop(1, "#044e39");
+      // 1. Dark Tactical Slate-Turf (Obsidian Emerald Gradient)
+      const grad = ctx.createRadialGradient(
+        width / 2,
+        height / 2,
+        width * 0.1,
+        width / 2,
+        height / 2,
+        width * 0.7
+      );
+      grad.addColorStop(0, "#0A1B14");
+      grad.addColorStop(0.6, "#07140F");
+      grad.addColorStop(1, "#050F0B");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
-      // Grass cut stripes
-      const stripeCount = 12;
+      // Subtle tonal mowing bands (16 vertical stripes)
+      const stripeCount = 16;
       const stripeW = width / stripeCount;
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.015)";
       for (let s = 1; s < stripeCount; s += 2) {
         ctx.fillRect(s * stripeW, 0, stripeW, height);
       }
 
-      // Jitter-Proof LERP Playback Buffer
+      // Buffer interpolation
       const buffer = frameBufferRef.current;
       let displayPlayers: PlayerPosition[] = [];
       let ballX = 52.5;
       let ballY = 34.0;
-      let ballSpeed = 0.0;
 
       if (buffer.length >= 2) {
         const f0 = buffer[0];
@@ -147,12 +151,10 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
 
         ballX = f0.ball.x + (f1.ball.x - f0.ball.x) * alpha;
         ballY = f0.ball.y + (f1.ball.y - f0.ball.y) * alpha;
-        ballSpeed = f1.ball.speed_kmh;
       } else if (buffer.length === 1) {
         displayPlayers = buffer[0].players;
         ballX = buffer[0].ball.x;
         ballY = buffer[0].ball.y;
-        ballSpeed = buffer[0].ball.speed_kmh;
       }
 
       latestRenderedPlayersRef.current = displayPlayers;
@@ -171,7 +173,7 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
         }));
       }
 
-      // 1. Dynamic Voronoi Pitch Control Shading
+      // 2. Dynamic Voronoi Pitch Control
       if (showVoronoi && displayPlayers.length >= 10) {
         const gridCols = 35;
         const gridRows = 22;
@@ -184,7 +186,6 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
           for (let c = 0; c < gridCols; c++) {
             const sampleX = ((c + 0.5) / gridCols) * PITCH_LENGTH;
 
-            // Find closest player to sample coordinate
             let closestTeam: "NLR" | "MSB" = "NLR";
             let minDistSq = Infinity;
 
@@ -196,11 +197,10 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
               }
             }
 
-            // Alpha scales subtly with proximity
             const fillStyle =
               closestTeam === "NLR"
-                ? "rgba(239, 68, 68, 0.16)" // NLR crimson control
-                : "rgba(59, 130, 246, 0.16)"; // MSB royal blue control
+                ? "rgba(225, 29, 72, 0.12)" // Refined NLR crimson
+                : "rgba(37, 99, 235, 0.12)"; // Refined MSB cobalt
 
             ctx.fillStyle = fillStyle;
             ctx.fillRect(c * cellW, r * cellH, cellW + 0.5, cellH + 0.5);
@@ -209,39 +209,43 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
         ctx.restore();
       }
 
-      // 2. Optional xT Grid Heatmap Overlay
+      // 3. Expected Threat (xT) Grid Overlay
       if (showXtGrid) {
         const rows = 8;
         const cols = 12;
         const cellW = width / cols;
         const cellH = height / rows;
 
+        ctx.save();
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < cols; c++) {
             const val = XT_HEAT[r][c];
-            let fillAlpha = Math.min(0.55, val * 0.85);
-            let color = "rgba(6, 182, 212,";
-            if (val > 0.3) color = "rgba(239, 68, 68,";
-            else if (val > 0.15) color = "rgba(245, 158, 11,";
-            else if (val > 0.05) color = "rgba(16, 185, 129,";
+            let fillAlpha = Math.min(0.45, val * 0.7);
+            let color = "rgba(229, 193, 88,"; // Gold accent base
+            if (val > 0.3) color = "rgba(225, 29, 72,";
+            else if (val > 0.12) color = "rgba(245, 158, 11,";
+            else if (val > 0.04) color = "rgba(56, 189, 248,";
 
             ctx.fillStyle = `${color} ${fillAlpha})`;
             ctx.fillRect(c * cellW, r * cellH, cellW - 1, cellH - 1);
 
             ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-            ctx.font = "9px monospace";
-            ctx.fillText(`+${val.toFixed(2)}`, c * cellW + 4, r * cellH + 12);
+            ctx.font = "8px monospace";
+            ctx.fillText(`+${val.toFixed(2)}`, c * cellW + 4, r * cellH + 11);
           }
         }
+        ctx.restore();
       }
 
-      // 3. Official Pitch Markings
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.65)";
-      ctx.lineWidth = 1.8;
+      // 4. Complete FIFA Pitch Geometry (Hairline Precision)
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+      ctx.lineWidth = 1.25;
 
+      // Outer Pitch Boundary
       ctx.strokeRect(toCanvasX(0), toCanvasY(0), toCanvasX(PITCH_LENGTH), toCanvasY(PITCH_WIDTH));
 
-      // Halfway line
+      // Halfway Line
       ctx.beginPath();
       ctx.moveTo(toCanvasX(52.5), toCanvasY(0));
       ctx.lineTo(toCanvasX(52.5), toCanvasY(PITCH_WIDTH));
@@ -253,25 +257,66 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.arc(toCanvasX(52.5), toCanvasY(34.0), 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = "white";
+      ctx.arc(toCanvasX(52.5), toCanvasY(34.0), 2.0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
       ctx.fill();
 
-      // Home Penalty Box & Spots
+      // Home Penalty Box (16.5m), Goal Area (5.5m), Penalty Spot (11m), and D-Arc
       ctx.strokeRect(toCanvasX(0), toCanvasY(13.84), toCanvasX(16.5), toCanvasY(40.32));
       ctx.strokeRect(toCanvasX(0), toCanvasY(24.84), toCanvasX(5.5), toCanvasY(18.32));
       ctx.beginPath();
-      ctx.arc(toCanvasX(11.0), toCanvasY(34.0), 2.2, 0, Math.PI * 2);
+      ctx.arc(toCanvasX(11.0), toCanvasY(34.0), 2.0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Away Penalty Box & Spots
+      // Home Penalty D-Arc (Missing in original!)
+      ctx.beginPath();
+      ctx.arc(toCanvasX(11.0), toCanvasY(34.0), 9.15 * scaleX, -0.927, 0.927);
+      ctx.stroke();
+
+      // Home Goal Net Frame
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+      ctx.strokeRect(toCanvasX(-2.0), toCanvasY(30.34), toCanvasX(2.0), toCanvasY(7.32));
+
+      // Away Penalty Box, Goal Area, Penalty Spot, and D-Arc
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
       ctx.strokeRect(toCanvasX(105.0 - 16.5), toCanvasY(13.84), toCanvasX(16.5), toCanvasY(40.32));
       ctx.strokeRect(toCanvasX(105.0 - 5.5), toCanvasY(24.84), toCanvasX(5.5), toCanvasY(18.32));
       ctx.beginPath();
-      ctx.arc(toCanvasX(105.0 - 11.0), toCanvasY(34.0), 2.2, 0, Math.PI * 2);
+      ctx.arc(toCanvasX(105.0 - 11.0), toCanvasY(34.0), 2.0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4. Pass/Vector Line Drawing
+      // Away Penalty D-Arc (Missing in original!)
+      ctx.beginPath();
+      ctx.arc(toCanvasX(105.0 - 11.0), toCanvasY(34.0), 9.15 * scaleX, Math.PI - 0.927, Math.PI + 0.927);
+      ctx.stroke();
+
+      // Away Goal Net Frame
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+      ctx.strokeRect(toCanvasX(105.0), toCanvasY(30.34), toCanvasX(2.0), toCanvasY(7.32));
+
+      // 4 Corner Arcs (1m radius - Missing in original!)
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+      const cornerR = 1.0 * scaleX;
+      // Top-Left (0, 0)
+      ctx.beginPath();
+      ctx.arc(toCanvasX(0), toCanvasY(0), cornerR, 0, Math.PI / 2);
+      ctx.stroke();
+      // Bottom-Left (0, 68)
+      ctx.beginPath();
+      ctx.arc(toCanvasX(0), toCanvasY(68), cornerR, -Math.PI / 2, 0);
+      ctx.stroke();
+      // Top-Right (105, 0)
+      ctx.beginPath();
+      ctx.arc(toCanvasX(105), toCanvasY(0), cornerR, Math.PI / 2, Math.PI);
+      ctx.stroke();
+      // Bottom-Right (105, 68)
+      ctx.beginPath();
+      ctx.arc(toCanvasX(105), toCanvasY(68), cornerR, Math.PI, Math.PI * 1.5);
+      ctx.stroke();
+
+      ctx.restore();
+
+      // 5. Tactical Pass / Press Vectors with Directional Arrow
       if (activeOverlay && activeOverlay.vector_coords) {
         const coords = activeOverlay.vector_coords;
         const sx = toCanvasX(coords.start_x);
@@ -280,141 +325,160 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
         const ey = toCanvasY(coords.end_y);
 
         ctx.save();
+        const isPress = activeOverlay.overlay_type === "high_press_turnover";
+        const strokeColor = isPress ? "#F59E0B" : "#E5C158"; // Studio gold pass or amber press
+
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(ex, ey);
-
-        const isPress = activeOverlay.overlay_type === "high_press_turnover";
-        ctx.strokeStyle = isPress ? "#F59E0B" : "#10B981";
-        ctx.lineWidth = 3.0;
-        ctx.setLineDash([6, 4]);
-        ctx.shadowColor = isPress ? "rgba(245, 158, 11, 0.8)" : "rgba(16, 185, 129, 0.8)";
-        ctx.shadowBlur = 8;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2.0;
+        ctx.setLineDash([5, 4]);
         ctx.stroke();
 
-        ctx.fillStyle = isPress ? "#F59E0B" : "#10B981";
+        // Directional arrowhead
+        const angle = Math.atan2(ey - sy, ex - sx);
+        const arrowLen = 9;
         ctx.beginPath();
-        ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(
+          ex - arrowLen * Math.cos(angle - Math.PI / 6),
+          ey - arrowLen * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+          ex - arrowLen * Math.cos(angle + Math.PI / 6),
+          ey - arrowLen * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fillStyle = strokeColor;
         ctx.fill();
         ctx.restore();
       }
 
-      // 5. Dynamic Player-Cam Spotlight & Field of View on Selected Player
+      // 6. Dynamic Player-Cam Spotlight on Selected Player
       if (isPlayerCamActive && focused) {
         const fx = toCanvasX(focused.x);
         const fy = toCanvasY(focused.y);
 
         ctx.save();
-        const spotColor = focused.team === "NLR" ? "rgba(239, 68, 68," : "rgba(59, 130, 246,";
-        const spotGrad = ctx.createRadialGradient(fx, fy, 10, fx, fy, 110);
-        spotGrad.addColorStop(0, `${spotColor} 0.35)`);
-        spotGrad.addColorStop(0.7, `${spotColor} 0.1)`);
+        const spotColor = focused.team === "NLR" ? "rgba(225, 29, 72," : "rgba(37, 99, 235,";
+        const spotGrad = ctx.createRadialGradient(fx, fy, 8, fx, fy, 90);
+        spotGrad.addColorStop(0, `${spotColor} 0.28)`);
+        spotGrad.addColorStop(0.7, `${spotColor} 0.08)`);
         spotGrad.addColorStop(1, `${spotColor} 0)`);
         ctx.fillStyle = spotGrad;
         ctx.beginPath();
-        ctx.arc(fx, fy, 110, 0, Math.PI * 2);
+        ctx.arc(fx, fy, 90, 0, Math.PI * 2);
         ctx.fill();
 
         // Field of view cone
         const forwardDirection = focused.team === "NLR" ? 0 : Math.PI;
-        ctx.fillStyle = `${spotColor} 0.14)`;
+        ctx.fillStyle = `${spotColor} 0.1)`;
         ctx.beginPath();
         ctx.moveTo(fx, fy);
-        ctx.arc(fx, fy, 80, forwardDirection - 0.45, forwardDirection + 0.45);
+        ctx.arc(fx, fy, 75, forwardDirection - 0.42, forwardDirection + 0.42);
         ctx.closePath();
         ctx.fill();
 
-        // Pulsing reticle ring
-        ctx.strokeStyle = focused.team === "NLR" ? "#EF4444" : "#3B82F6";
-        ctx.lineWidth = 1.8;
-        ctx.setLineDash([4, 3]);
+        // Precision champagne reticle ring
+        ctx.strokeStyle = "#E5C158";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
         ctx.beginPath();
-        ctx.arc(fx, fy, 24, 0, Math.PI * 2);
+        ctx.arc(fx, fy, 20, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
 
-      // 6. Render 22 Players
+      // 7. Render 22 Anodized Player Tokens
       displayPlayers.forEach((p) => {
         const px = toCanvasX(p.x);
         const py = toCanvasY(p.y);
         const isSelected = p.player_id === selectedPlayerId;
-        const radius = isSelected ? 10.0 : 8.5;
+        const radius = isSelected ? 9.5 : 8.0;
 
         const isNLR = p.team === "NLR";
-        const primaryColor = isNLR ? "#EF4444" : "#3B82F6";
+        const teamColor = isNLR ? "#E11D48" : "#2563EB";
         const isHighlighted = activeOverlay?.highlight_player_ids?.includes(p.player_id);
 
         ctx.save();
 
+        // Highlight ring
         if (isHighlighted || isSelected) {
           ctx.beginPath();
-          ctx.arc(px, py, radius + 5, 0, Math.PI * 2);
-          ctx.fillStyle = isSelected
-            ? "rgba(6, 182, 212, 0.6)"
-            : isNLR
-            ? "rgba(239, 68, 68, 0.5)"
-            : "rgba(59, 130, 246, 0.5)";
-          ctx.fill();
+          ctx.arc(px, py, radius + 4.5, 0, Math.PI * 2);
+          ctx.strokeStyle = isSelected ? "#E5C158" : teamColor;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
         }
 
+        // Anodized dark core token
         ctx.beginPath();
         ctx.arc(px, py, radius, 0, Math.PI * 2);
-        ctx.fillStyle = primaryColor;
-        ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-        ctx.shadowBlur = 4;
+        ctx.fillStyle = "#12151B";
         ctx.fill();
 
-        ctx.strokeStyle = isSelected ? "#06B6D4" : p.shirt_number === 8 ? "#FACC15" : "#FFFFFF";
-        ctx.lineWidth = isSelected ? 2.5 : p.shirt_number === 8 ? 2.0 : 1.2;
+        // Outer precision rim
+        ctx.strokeStyle = isSelected ? "#E5C158" : teamColor;
+        ctx.lineWidth = isSelected ? 2.5 : 2.0;
         ctx.stroke();
 
+        // Tabular Shirt Number
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = `bold ${radius > 9 ? 9 : 8}px monospace`;
+        ctx.font = `bold ${radius > 8.5 ? 9 : 8}px 'Space Grotesk', sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(String(p.shirt_number), px, py);
 
-        ctx.font = "8px sans-serif";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-        ctx.fillText(p.name.split("-")[0], px, py + radius + 8);
+        // Architectural Nameplate Pill
+        const shortName = p.name.split("-")[0];
+        ctx.font = "8px 'Inter', sans-serif";
+        const nameW = ctx.measureText(shortName).width + 6;
+        const nameH = 11;
+        ctx.fillStyle = "rgba(10, 12, 16, 0.85)";
+        ctx.fillRect(px - nameW / 2, py + radius + 3, nameW, nameH);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(px - nameW / 2, py + radius + 3, nameW, nameH);
 
-        // Sprint speed badge for players over 30 km/h
+        ctx.fillStyle = "rgba(244, 244, 246, 0.85)";
+        ctx.fillText(shortName, px, py + radius + 8.5);
+
+        // Sprint Speed Telemetry Tag (No emojis!)
         if (p.speed_kmh >= 30.0) {
-          ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-          ctx.strokeStyle = "#F59E0B";
-          ctx.lineWidth = 1;
-          const badgeW = 54;
-          const badgeH = 14;
-          ctx.fillRect(px - badgeW / 2, py - radius - 16, badgeW, badgeH);
-          ctx.strokeRect(px - badgeW / 2, py - radius - 16, badgeW, badgeH);
-
-          ctx.fillStyle = "#FACC15";
+          const sprintText = `${p.speed_kmh.toFixed(1)} KM/H`;
           ctx.font = "bold 8px monospace";
-          ctx.fillText(`⚡ ${p.speed_kmh.toFixed(1)} km/h`, px, py - radius - 7);
+          const tagW = ctx.measureText(sprintText).width + 8;
+          const tagH = 13;
+          ctx.fillStyle = "#12151C";
+          ctx.fillRect(px - tagW / 2, py - radius - 15, tagW, tagH);
+          ctx.strokeStyle = "#E5C158";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(px - tagW / 2, py - radius - 15, tagW, tagH);
+
+          ctx.fillStyle = "#E5C158";
+          ctx.fillText(sprintText, px, py - radius - 6.5);
         }
 
         ctx.restore();
       });
 
-      // 7. Render Ball
+      // 8. Render Ball
       const bx = toCanvasX(ballX);
       const by = toCanvasY(ballY);
 
       ctx.save();
       ctx.beginPath();
-      ctx.arc(bx + 1.5, by + 1.5, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.arc(bx + 1, by + 1, 4.0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
       ctx.fill();
 
       ctx.beginPath();
-      ctx.arc(bx, by, 4.5, 0, Math.PI * 2);
+      ctx.arc(bx, by, 4.0, 0, Math.PI * 2);
       ctx.fillStyle = "#FFFFFF";
-      ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
-      ctx.shadowBlur = 6;
       ctx.fill();
 
-      ctx.strokeStyle = "#1E293B";
+      ctx.strokeStyle = "#12151B";
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.restore();
@@ -430,7 +494,7 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
   }, [showXtGrid, showVoronoi, activeOverlay, isPlayerCamActive, selectedPlayerId]);
 
   return (
-    <div className="relative w-full aspect-[105/68] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
+    <div className="relative w-full aspect-[105/68] bg-[#07080A] rounded-xl overflow-hidden border border-white/10 shadow-2xl">
       <canvas
         ref={canvasRef}
         width={1050}
@@ -444,84 +508,86 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
       <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 flex-wrap">
         <button
           onClick={() => setShowVoronoi(!showVoronoi)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono transition-all backdrop-blur-md border ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-sans transition-all backdrop-blur-xl border ${
             showVoronoi
-              ? "bg-purple-500/20 border-purple-400 text-purple-300 font-bold shadow-md shadow-purple-950"
-              : "bg-slate-900/80 border-slate-700/80 text-slate-300 hover:text-white"
+              ? "bg-[#181C24] border-white/30 text-white font-semibold shadow-md"
+              : "bg-[#090A0D]/90 border-white/10 text-zinc-300 hover:text-white"
           }`}
           title="Dynamic Voronoi territory control mesh"
         >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Pitch Control (Voronoi: {showVoronoi ? "ON" : "OFF"})</span>
+          <Layers className="w-3.5 h-3.5 text-zinc-400" />
+          <span>Pitch Control {showVoronoi ? "(Active)" : ""}</span>
         </button>
 
         <button
           onClick={() => setShowXtGrid(!showXtGrid)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono transition-all backdrop-blur-md border ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-sans transition-all backdrop-blur-xl border ${
             showXtGrid
-              ? "bg-cyan-500/20 border-cyan-400 text-cyan-300 font-bold shadow-md shadow-cyan-950"
-              : "bg-slate-900/80 border-slate-700/80 text-slate-300 hover:text-white"
+              ? "bg-[#181C24] border-white/30 text-white font-semibold shadow-md"
+              : "bg-[#090A0D]/90 border-white/10 text-zinc-300 hover:text-white"
           }`}
           title="Toggle Expected Threat 8x12 grid overlay"
         >
-          <Grid className="w-3.5 h-3.5" />
+          <Grid className="w-3.5 h-3.5 text-zinc-400" />
           <span>xT Heatmap</span>
         </button>
       </div>
 
       {/* Dynamic Player-Cam Floating HUD */}
       {isPlayerCamActive && (
-        <div className="absolute top-2.5 right-2.5 bg-slate-950/95 border border-cyan-500/70 rounded-xl p-3.5 text-white backdrop-blur-md shadow-2xl font-mono text-xs flex flex-col gap-2 z-10 w-60 animate-fade-in">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+        <div className="absolute top-2.5 right-2.5 bg-[#090A0D]/92 border border-white/10 rounded-lg p-3 text-white backdrop-blur-xl shadow-2xl font-sans text-xs flex flex-col gap-2 z-10 w-56 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-              <span className="font-bold text-white text-[12px] truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-studio-gold" />
+              <span className="font-display font-bold text-white text-[12px] truncate">
                 #{focusedPlayerStats.number} {focusedPlayerStats.name.split("-")[0]}
               </span>
             </div>
             <span
-              className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+              className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold uppercase ${
                 focusedPlayerStats.team === "NLR"
-                  ? "bg-red-950 text-red-300 border border-red-700"
-                  : "bg-blue-950 text-blue-300 border border-blue-700"
+                  ? "bg-rose-950/80 text-rose-300 border border-rose-800"
+                  : "bg-blue-950/80 text-blue-300 border border-blue-800"
               }`}
             >
               {focusedPlayerStats.team}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
             <div>
-              <span className="text-slate-400 text-[10px] block">LIVE SPEED</span>
-              <div className="font-bold text-slate-200 flex items-center gap-1">
-                <Zap className="w-3 h-3 text-amber-400" />
+              <span className="text-zinc-400 text-[9px] font-sans block">LIVE SPEED</span>
+              <div className="font-bold text-zinc-200 tabular-nums flex items-center gap-1">
+                <Zap className="w-3 h-3 text-studio-gold" />
                 <span>{focusedPlayerStats.speed.toFixed(1)} km/h</span>
               </div>
             </div>
             <div>
-              <span className="text-slate-400 text-[10px] block">DISTANCE</span>
-              <div className="font-bold text-slate-200">{focusedPlayerStats.distanceKm.toFixed(1)} km</div>
+              <span className="text-zinc-400 text-[9px] font-sans block">DISTANCE</span>
+              <div className="font-bold text-zinc-200 tabular-nums">
+                {focusedPlayerStats.distanceKm.toFixed(1)} km
+              </div>
             </div>
             <div>
-              <span className="text-slate-400 text-[10px] block">TOUCHES</span>
-              <div className="font-bold text-slate-200">{focusedPlayerStats.touches}</div>
+              <span className="text-zinc-400 text-[9px] font-sans block">TOUCHES</span>
+              <div className="font-bold text-zinc-200 tabular-nums">{focusedPlayerStats.touches}</div>
             </div>
             <div>
-              <span className="text-slate-400 text-[10px] block">STAMINA</span>
-              <div className="font-bold text-emerald-400">{focusedPlayerStats.stamina}%</div>
+              <span className="text-zinc-400 text-[9px] font-sans block">STAMINA</span>
+              <div className="font-bold text-emerald-400 tabular-nums">{focusedPlayerStats.stamina}%</div>
             </div>
           </div>
 
-          {/* Stamina bar */}
-          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-0.5">
+          {/* Segmented Stamina Bar */}
+          <div className="w-full bg-[#181C23] h-1.5 rounded-full overflow-hidden mt-0.5">
             <div
-              className="bg-gradient-to-r from-emerald-500 to-cyan-400 h-full rounded-full transition-all"
+              className="bg-emerald-400 h-full rounded-full transition-all"
               style={{ width: `${focusedPlayerStats.stamina}%` }}
             />
           </div>
 
-          <span className="text-[9px] text-slate-400 text-center font-sans">
-            Tip: Click any player on pitch to switch
+          <span className="text-[9px] text-zinc-400 text-center font-sans">
+            Click any player on pitch to inspect
           </span>
         </div>
       )}

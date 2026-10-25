@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Activity, Flame, Shield } from "lucide-react";
+import { Activity } from "lucide-react";
 import { ComputedMetrics } from "@/types/match";
 
 interface MomentumGaugeProps {
@@ -13,121 +13,97 @@ export const MomentumGauge: React.FC<MomentumGaugeProps> = ({ metrics }) => {
   const fieldTilt = metrics?.field_tilt_nlr_pct ?? 58.0;
   const msbTilt = Math.round(100 - fieldTilt);
 
-  // Gauge needle rotation angle (-90deg to +90deg for 0 to 100)
-  const angle = (chaos / 100) * 180 - 90;
-
-  // Determine chaos status description
   let statusText = "Methodical Buildup";
-  let statusColor = "text-emerald-400";
+  let statusBadgeStyle = "text-emerald-400 bg-emerald-950/40 border-emerald-800/60";
   if (chaos >= 75) {
     statusText = "Transitional Chaos";
-    statusColor = "text-rose-400";
+    statusBadgeStyle = "text-rose-400 bg-rose-950/40 border-rose-800/60";
   } else if (chaos >= 50) {
     statusText = "Contested Rhythm";
-    statusColor = "text-amber-400";
+    statusBadgeStyle = "text-studio-gold bg-amber-950/40 border-amber-800/60";
   }
 
   return (
-    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 shadow-xl backdrop-blur-md grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-      {/* Left: Control vs Chaos Semicircle Gauge */}
-      <div className="flex items-center gap-4 border-b md:border-b-0 md:border-r border-slate-800 pb-3 md:pb-0 pr-0 md:pr-4">
-        {/* SVG Semicircle Gauge */}
-        <div className="relative w-28 h-16 flex items-center justify-center">
-          <svg viewBox="0 0 100 55" className="w-full h-full overflow-visible">
-            {/* Background Arc */}
-            <path
-              d="M 10 50 A 40 40 0 0 1 90 50"
-              fill="none"
-              stroke="#1E293B"
-              strokeWidth="10"
-              strokeLinecap="round"
-            />
-            {/* Colored Gradient Arc */}
-            <path
-              d="M 10 50 A 40 40 0 0 1 90 50"
-              fill="none"
-              stroke="url(#chaosGrad)"
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray="125.6"
-              strokeDashoffset={125.6 - (chaos / 100) * 125.6}
-              className="transition-all duration-700 ease-out"
-            />
-            <defs>
-              <linearGradient id="chaosGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10B981" />
-                <stop offset="50%" stopColor="#F59E0B" />
-                <stop offset="100%" stopColor="#EF4444" />
-              </linearGradient>
-            </defs>
+    <div className="w-full bg-[#0D0F12] border border-white/10 rounded-xl p-3.5 shadow-xl grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+      {/* Left: Precision Linear Tick Scale for Control vs. Chaos */}
+      <div className="flex flex-col gap-2 border-b md:border-b-0 md:border-r border-white/10 pb-3 md:pb-0 pr-0 md:pr-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-[10px] uppercase tracking-wider">
+            <Activity className="w-3.5 h-3.5 text-studio-gold" />
+            <span>Control vs. Chaos Index</span>
+          </div>
 
-            {/* Needle Pivot & Needle */}
-            <g
-              transform={`translate(50, 50) rotate(${angle})`}
-              className="transition-transform duration-700 ease-out"
-            >
-              <line
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="-38"
-                stroke="#F8FAFC"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              <circle cx="0" cy="0" r="4" fill="#06B6D4" />
-            </g>
-          </svg>
+          <span className={`text-[10px] font-sans font-semibold px-2 py-0.5 rounded border ${statusBadgeStyle}`}>
+            {statusText}
+          </span>
         </div>
 
-        {/* Text Stats */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[10px] uppercase tracking-wider">
-            <Activity className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Control vs. Chaos</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-white font-mono tracking-tight">
-              {chaos.toFixed(0)}
-            </span>
-            <span className={`text-xs font-bold font-mono ${statusColor}`}>
-              {statusText}
-            </span>
-          </div>
-          <span className="text-[10px] text-slate-400">
-            0 = Positional structure · 100 = End-to-end chaos
+        {/* Big Tabular Readout */}
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-display font-bold text-white tabular-nums tracking-tight">
+            {chaos.toFixed(0)}
           </span>
+          <span className="text-zinc-500 font-mono text-xs">/ 100</span>
+        </div>
+
+        {/* F1-Style Precision Linear Scale */}
+        <div className="space-y-1">
+          <div className="relative w-full h-2.5 bg-[#07080A] rounded-full border border-white/10 overflow-hidden">
+            {/* Active Range Fill */}
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 via-studio-gold to-rose-500 transition-all duration-500 ease-out"
+              style={{ width: `${Math.min(100, Math.max(0, chaos))}%` }}
+            />
+          </div>
+
+          {/* Tick Scale Calibration Labels */}
+          <div className="flex items-center justify-between text-[9px] font-mono text-zinc-500 tabular-nums pt-0.5">
+            <span>00 POSITIONAL</span>
+            <span className="text-zinc-600">| 50 |</span>
+            <span>100 CHAOS</span>
+          </div>
         </div>
       </div>
 
-      {/* Right: Territorial Field Tilt % Bar */}
-      <div className="flex flex-col gap-1.5 pl-0 md:pl-2">
-        <div className="flex items-center justify-between text-[11px] font-mono">
-          <div className="flex items-center gap-1.5 text-slate-300">
+      {/* Right: Territorial Dominance Matrix with 50% Centerline */}
+      <div className="flex flex-col gap-2 pl-0 md:pl-2">
+        <div className="flex items-center justify-between text-xs font-sans">
+          <div className="flex items-center gap-1.5 text-zinc-300">
             <span className="w-2 h-2 rounded-full bg-nlr" />
-            <span className="font-bold">NLR Territory Tilt</span>
-            <span className="text-nlr font-black">{Math.round(fieldTilt)}%</span>
+            <span className="font-semibold text-[11px]">NLR Territory</span>
+            <span className="text-white font-display font-bold tabular-nums ml-1">
+              {Math.round(fieldTilt)}%
+            </span>
           </div>
-          <div className="flex items-center gap-1.5 text-slate-300">
-            <span className="text-msb font-black">{msbTilt}%</span>
-            <span className="font-bold">MSB Territory</span>
+
+          <div className="flex items-center gap-1.5 text-zinc-300">
+            <span className="text-white font-display font-bold tabular-nums mr-1">
+              {msbTilt}%
+            </span>
+            <span className="font-semibold text-[11px]">MSB Territory</span>
             <span className="w-2 h-2 rounded-full bg-msb" />
           </div>
         </div>
 
-        {/* Dual-ended Progress Bar */}
-        <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800 flex shadow-inner">
+        {/* Dual Segmented Bar with Center 50% Marker */}
+        <div className="relative w-full bg-[#07080A] h-2.5 rounded-full overflow-hidden border border-white/10 flex shadow-inner">
+          {/* 50% Center Marker */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/40 z-10 -translate-x-1/2 pointer-events-none" />
+
+          {/* Home Fill */}
           <div
-            className="bg-gradient-to-r from-red-600 to-nlr h-full rounded-l-full transition-all duration-700 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+            className="bg-nlr h-full transition-all duration-700 ease-out"
             style={{ width: `${fieldTilt}%` }}
           />
+
+          {/* Away Fill */}
           <div
-            className="bg-gradient-to-r from-msb to-blue-600 h-full rounded-r-full transition-all duration-700 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+            className="bg-msb h-full transition-all duration-700 ease-out"
             style={{ width: `${msbTilt}%` }}
           />
         </div>
 
-        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+        <div className="flex items-center justify-between text-[9px] text-zinc-500 font-mono">
           <span>Final-Third Possession Dominance</span>
           <span>Rolling 40-Event Window</span>
         </div>
