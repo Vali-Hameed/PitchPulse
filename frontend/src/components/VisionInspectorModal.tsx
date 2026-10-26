@@ -11,12 +11,19 @@ import {
   CheckCircle2,
   Activity,
   Scan,
+  Zap,
+  ArrowRight,
 } from "lucide-react";
-import { VisionFrameResponse, VisionDetection } from "@/types/match";
+import {
+  CustomEventIngestRequest,
+  VisionFrameResponse,
+  VisionDetection,
+} from "@/types/match";
 
 interface VisionInspectorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onIngestAutoEvent?: (payload: CustomEventIngestRequest) => Promise<any>;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -62,17 +69,74 @@ const DEFAULT_VISION_DATA: VisionFrameResponse = {
 export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
   isOpen,
   onClose,
+  onIngestAutoEvent,
 }) => {
   const [visionData, setVisionData] = useState<VisionFrameResponse>(DEFAULT_VISION_DATA);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isEmitting, setIsEmitting] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<"ALL" | "NLR" | "MSB" | "BALL">("ALL");
   const [hoveredDetection, setHoveredDetection] = useState<VisionDetection | null>(null);
+  const [carrierTrackId, setCarrierTrackId] = useState<string>("TRK_NLR_8");
+  const [targetTrackId, setTargetTrackId] = useState<string>("TRK_NLR_7");
+  const [selectRoleMode, setSelectRoleMode] = useState<"carrier" | "target">("target");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const scanLineRef = useRef<number>(0);
 
-  const fetchVisionFrame = useCallback(async () => {
-    setIsLoading(true);
+  const carrierDet =
+    visionData.detections.find((d) => d.tracking_id === carrierTrackId) ||
+    visionData.detections.find((d) => d.label === "player_nlr") ||
+    visionData.detections[0];
+
+  const targetDet =
+    visionData.detections.find((d) => d.tracking_id === targetTrackId) ||
+    visionData.detections.find((d) => d.tracking_id === "TRK_NLR_7") ||
+    visionData.detections[2];
+
+  const autoDistM = carrierDet && targetDet
+    ? Math.hypot(targetDet.pitch_x - carrierDet.pitch_x, targetDet.pitch_y - carrierDet.pitch_y)
+    : 22.4;
+  const autoSpeedKmh = Math.min(112, Math.max(46, Math.round(48 + autoDistM * 1.15)));
+
+  const handleEmitAutoEvent = async () => {
+    if (!onIngestAutoEvent || !carrierDet || !targetDet) return;
+    setIsEmitting(true);
+    try {
+      const toPlayerId = (trk: string) => {
+        const parts = trk.split("_");
+        if (parts.length >= 3) return `${parts[1]}-${parts[2]}`;
+        return "NLR-8";
+      };
+      const actorId = toPlayerId(carrierDet.tracking_id);
+      const targetId = toPlayerId(targetDet.tracking_id);
+      const team = actorId.startsWith("MSB") ? "MSB" : "NLR";
+      const isShot = (team === "NLR" && targetDet.pitch_x >= 88) || (team === "MSB" && targetDet.pitch_x <= 17);
+
+      await onIngestAutoEvent({
+        match_clock: visionData.match_clock,
+        event_type: isShot ? "shot" : "pass",
+        team,
+        actor_id: actorId,
+        target_id: targetId,
+        start_x: Number(carrierDet.pitch_x.toFixed(1)),
+        start_y: Number(carrierDet.pitch_y.toFixed(1)),
+        end_x: Number(targetDet.pitch_x.toFixed(1)),
+        end_y: Number(targetDet.pitch_y.toFixed(1)),
+        ball_speed_kmh: autoSpeedKmh,
+        nearest_defender_dist_m: 1.1,
+        defenders_bypassed: Math.max(1, Math.min(4, Math.round(autoDistM / 11))),
+      });
+      onClose();
+    } finally {
+      setIsEmitting(false);
+    }
+  };
+
+  const [isAutoStreaming, setIsAutoStreaming] = useState<boolean>(true);
+  const [refreshSpeedMs, setRefreshSpeedMs] = useState<number>(250);
+
+  const fetchVisionFrame = useCallback(async (silent: boolean = false) => {
+    if (!silent) setIsLoading(true);
     try {
       let res: Response | null = null;
       try {
@@ -92,15 +156,25 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
     } catch (err: any) {
       console.warn("Using edge tactical vision cache:", err?.message);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
+  // Automatic high-frequency inference streaming loop (250ms default)
   useEffect(() => {
-    if (isOpen) {
-      fetchVisionFrame();
-    }
-  }, [isOpen, fetchVisionFrame]);
+    if (!isOpen) return;
+
+    // Immediate initial fetch
+    fetchVisionFrame(false);
+
+    if (!isAutoStreaming) return;
+
+    const interval = setInterval(() => {
+      fetchVisionFrame(true);
+    }, refreshSpeedMs);
+
+    return () => clearInterval(interval);
+  }, [isOpen, isAutoStreaming, refreshSpeedMs, fetchVisionFrame]);
 
   // Handle ESC key
   useEffect(() => {
@@ -315,6 +389,49 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
             ctx.fillText(tagText, bx + 3, Math.max(8, by - 3));
           });
 
+          // Draw Auto-Detected Pass/Shot Vector between carrierDet and targetDet
+          if (carrierDet && targetDet) {
+            const cX = ((carrierDet.pitch_x / 105.0) * 0.82 + 0.09) * width;
+            const cY = ((carrierDet.pitch_y / 68.0) * 0.74 + 0.13) * height;
+            const tX = ((targetDet.pitch_x / 105.0) * 0.82 + 0.09) * width;
+            const tY = ((targetDet.pitch_y / 68.0) * 0.74 + 0.13) * height;
+
+            ctx.save();
+            ctx.strokeStyle = "#E5C158";
+            ctx.lineWidth = 2.25;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(cX, cY);
+            ctx.lineTo(tX, tY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Arrowhead at target
+            const angle = Math.atan2(tY - cY, tX - cX);
+            ctx.fillStyle = "#E5C158";
+            ctx.beginPath();
+            ctx.moveTo(tX, tY);
+            ctx.lineTo(tX - 10 * Math.cos(angle - Math.PI / 6), tY - 10 * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(tX - 10 * Math.cos(angle + Math.PI / 6), tY - 10 * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+
+            // Midpoint Telemetry Badge
+            const midX = (cX + tX) / 2;
+            const midY = (cY + tY) / 2 - 10;
+            const vecLabel = `AUTO-EVENT: ${autoDistM.toFixed(1)}m · ${autoSpeedKmh} km/h`;
+            ctx.font = "bold 9px monospace";
+            const lw = ctx.measureText(vecLabel).width + 10;
+            ctx.fillStyle = "rgba(9, 10, 14, 0.9)";
+            ctx.fillRect(midX - lw / 2, midY - 10, lw, 15);
+            ctx.strokeStyle = "#E5C158";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(midX - lw / 2, midY - 10, lw, 15);
+            ctx.fillStyle = "#E5C158";
+            ctx.fillText(vecLabel, midX - lw / 2 + 5, midY + 1);
+            ctx.restore();
+          }
+
           ctx.restore();
         }
       }
@@ -327,7 +444,7 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
       running = false;
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [isOpen, visionData, hoveredDetection]);
+  }, [isOpen, visionData, hoveredDetection, carrierDet, targetDet, autoDistM, autoSpeedKmh]);
 
   if (!isOpen) return null;
 
@@ -363,15 +480,58 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Real-Time Auto-Streaming Status & Rate Selector */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#07080A] border border-white/10 text-[11px] font-mono">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isAutoStreaming ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" : "bg-zinc-600"
+                }`}
+              />
+              <span className="text-zinc-300 font-semibold text-[10px]">
+                {isAutoStreaming ? "AUTO-STREAM" : "PAUSED"}
+              </span>
+
+              <div className="flex items-center gap-0.5 ml-1 border-l border-white/10 pl-1.5 text-[10px]">
+                {([250, 500, 1000] as const).map((spd) => (
+                  <button
+                    key={spd}
+                    onClick={() => {
+                      setRefreshSpeedMs(spd);
+                      setIsAutoStreaming(true);
+                    }}
+                    className={`px-1.5 py-0.5 rounded transition-all font-semibold ${
+                      refreshSpeedMs === spd && isAutoStreaming
+                        ? "bg-studio-gold text-black font-bold"
+                        : "text-zinc-500 hover:text-zinc-200"
+                    }`}
+                    title={`Set inference polling to ${spd}ms`}
+                  >
+                    {spd === 250 ? "250ms" : spd === 500 ? "0.5s" : "1.0s"}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setIsAutoStreaming((prev) => !prev)}
+                className={`ml-1 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold transition-colors ${
+                  isAutoStreaming
+                    ? "bg-emerald-950/80 text-emerald-400 border border-emerald-700/60"
+                    : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                }`}
+              >
+                {isAutoStreaming ? "LIVE" : "RESUME"}
+              </button>
+            </div>
+
             <button
-              onClick={fetchVisionFrame}
+              onClick={() => fetchVisionFrame(false)}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#14171D] hover:bg-[#1A1F28] border border-white/10 text-zinc-200 text-xs font-sans transition-all disabled:opacity-50"
-              title="Run inference cycle"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#14171D] hover:bg-[#1A1F28] border border-white/10 text-zinc-200 text-xs font-sans transition-all disabled:opacity-50"
+              title="Manual inference cycle refresh"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-studio-gold" : ""}`} />
-              <span>Inference Refresh</span>
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
               onClick={onClose}
@@ -459,20 +619,47 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
                 </div>
 
                 {/* Filter buttons */}
-                <div className="flex items-center gap-1 bg-[#07080A] p-0.5 rounded border border-white/10 text-[10px] font-mono">
-                  {(["ALL", "NLR", "MSB", "BALL"] as const).map((filt) => (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-0.5 bg-[#07080A] p-0.5 rounded border border-white/10 text-[9px] font-mono">
                     <button
-                      key={filt}
-                      onClick={() => setSelectedFilter(filt)}
+                      onClick={() => setSelectRoleMode("carrier")}
                       className={`px-1.5 py-0.5 rounded font-bold transition-colors ${
-                        selectedFilter === filt
-                          ? "bg-white/15 text-white"
+                        selectRoleMode === "carrier"
+                          ? "bg-studio-gold/20 text-studio-gold border border-studio-gold/40"
                           : "text-zinc-500 hover:text-zinc-300"
                       }`}
+                      title="Click a player row below to set Ball Carrier"
                     >
-                      {filt}
+                      SET CARRIER
                     </button>
-                  ))}
+                    <button
+                      onClick={() => setSelectRoleMode("target")}
+                      className={`px-1.5 py-0.5 rounded font-bold transition-colors ${
+                        selectRoleMode === "target"
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : "text-zinc-500 hover:text-zinc-300"
+                      }`}
+                      title="Click a player row below to set Pass/Shot Target"
+                    >
+                      SET TARGET
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1 bg-[#07080A] p-0.5 rounded border border-white/10 text-[10px] font-mono">
+                    {(["ALL", "NLR", "MSB", "BALL"] as const).map((filt) => (
+                      <button
+                        key={filt}
+                        onClick={() => setSelectedFilter(filt)}
+                        className={`px-1.5 py-0.5 rounded font-bold transition-colors ${
+                          selectedFilter === filt
+                            ? "bg-white/15 text-white"
+                            : "text-zinc-500 hover:text-zinc-300"
+                        }`}
+                      >
+                        {filt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -489,32 +676,56 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
                   <tbody className="divide-y divide-white/[0.04]">
                     {filteredDetections.map((det) => {
                       const isHovered = hoveredDetection?.tracking_id === det.tracking_id;
+                      const isCarrier = carrierDet?.tracking_id === det.tracking_id;
+                      const isTarget = targetDet?.tracking_id === det.tracking_id;
                       const isNLR = det.label === "player_nlr" || (det.label === "goalkeeper" && det.tracking_id.includes("NLR"));
                       const isMSB = det.label === "player_msb" || (det.label === "goalkeeper" && det.tracking_id.includes("MSB"));
+                      const isSelectablePlayer = det.label !== "ball" && det.label !== "referee";
 
                       return (
                         <tr
                           key={det.tracking_id}
                           onMouseEnter={() => setHoveredDetection(det)}
                           onMouseLeave={() => setHoveredDetection(null)}
+                          onClick={() => {
+                            if (!isSelectablePlayer) return;
+                            if (selectRoleMode === "carrier") {
+                              setCarrierTrackId(det.tracking_id);
+                              setSelectRoleMode("target");
+                            } else {
+                              setTargetTrackId(det.tracking_id);
+                            }
+                          }}
                           className={`cursor-pointer transition-colors ${
-                            isHovered
+                            isHovered || isCarrier || isTarget
                               ? "bg-white/10 text-white"
                               : "hover:bg-white/[0.03] text-zinc-300"
                           }`}
                         >
                           <td className="py-1.5 px-2.5 font-bold">
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] ${
-                                isNLR
-                                  ? "bg-rose-950/60 text-rose-300 border border-rose-800"
-                                  : isMSB
-                                  ? "bg-blue-950/60 text-blue-300 border border-blue-800"
-                                  : "bg-amber-950/60 text-amber-300 border border-amber-800"
-                              }`}
-                            >
-                              {det.tracking_id}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] ${
+                                  isNLR
+                                    ? "bg-rose-950/60 text-rose-300 border border-rose-800"
+                                    : isMSB
+                                    ? "bg-blue-950/60 text-blue-300 border border-blue-800"
+                                    : "bg-amber-950/60 text-amber-300 border border-amber-800"
+                                }`}
+                              >
+                                {det.tracking_id}
+                              </span>
+                              {isCarrier && (
+                                <span className="px-1 py-0.2 rounded text-[8px] bg-studio-gold text-black font-bold">
+                                  CARRIER
+                                </span>
+                              )}
+                              {isTarget && (
+                                <span className="px-1 py-0.2 rounded text-[8px] bg-emerald-500 text-black font-bold">
+                                  TARGET
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-1.5 px-2 truncate max-w-[120px] font-sans">
                             {det.player_name || det.label.replace("_", " ").toUpperCase()}
@@ -535,18 +746,40 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-5 py-3 border-t border-white/10 bg-[#0D0F12] flex items-center justify-between text-xs font-sans text-zinc-400">
-          <div className="flex items-center gap-2 font-mono text-[11px]">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>Planar Perspective Homography Matrix H (3x3) Calibrated to Wembley Synthetic Grid</span>
+        {/* Footer with Auto-Eventing Pipeline Bridge */}
+        <div className="px-5 py-3 border-t border-white/10 bg-[#0D0F12] flex flex-wrap items-center justify-between gap-3 text-xs font-sans text-zinc-400">
+          <div className="flex items-center gap-3 font-mono text-[11px]">
+            <span className="flex items-center gap-1.5 text-zinc-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-studio-gold" />
+              <strong className="text-studio-gold">AUTO-EVENT BRIDGE:</strong>
+              <span>{carrierDet?.player_name?.replace("-Sim", "") || carrierDet?.tracking_id}</span>
+              <ArrowRight className="w-3 h-3 text-studio-gold" />
+              <span>{targetDet?.player_name?.replace("-Sim", "") || targetDet?.tracking_id}</span>
+            </span>
+            <span className="text-zinc-500">|</span>
+            <span className="text-emerald-400 tabular-nums font-semibold">
+              Dist: {autoDistM.toFixed(1)}m · Est. Speed: {autoSpeedKmh} km/h
+            </span>
           </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-[#14171D] hover:bg-[#1A1F28] border border-white/10 text-white font-medium text-xs transition-colors"
-          >
-            Close Inspector
-          </button>
+
+          <div className="flex items-center gap-2">
+            {onIngestAutoEvent && (
+              <button
+                onClick={handleEmitAutoEvent}
+                disabled={isEmitting}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-studio-gold hover:bg-[#ebd074] text-black font-display font-bold text-xs transition-all shadow-sm disabled:opacity-50"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>{isEmitting ? "Emitting..." : "Emit Auto-Event to 5-Stage Pipeline"}</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-1.5 rounded-lg bg-[#14171D] hover:bg-[#1A1F28] border border-white/10 text-white font-medium text-xs transition-colors"
+            >
+              Close Inspector
+            </button>
+          </div>
         </div>
       </div>
     </div>
