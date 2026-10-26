@@ -8,6 +8,4 @@ python-dotenv>=1.0.1
 httpx>=0.27.0
 sse-starlette>=2.1.0
 pytest>=8.2.0
-# NOTE: the PyPI "asyncio" backport from the original spec is intentionally omitted.
-# asyncio ships with the Python 3.12 standard library; the PyPI package is an
-# abandoned Python 3.3 backport that can shadow the stdlib module.
+
