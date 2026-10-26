@@ -153,25 +153,6 @@ Both the main 2D Tactical Pitch [`PitchCanvas.tsx`] and the AI Vision Inspector 
 - Obsidian Emerald radial gradient background.
 
 ### 🤖 Verifier Guardrail Pattern & Inline Hallucination Strikethrough
-### ⏪ 60-Second Rolling Broadcast DVR Scrubber (`PitchDVRBar.tsx`)
-- **Zero-Latency Ring Buffer:** Stores up to 600 frames (60 seconds at 10Hz) in client-side memory with zero network roundtrips during scrubbing.
-- **Hardware Director Transport:** Play / Pause freeze-frame toggle, discrete $-5\text{s}$ and $+5\text{s}$ nudge buttons, and $1\times, 2\times, 4\times$ speed multipliers.
-- **Interactive Scrubber Slider Track:** Drag smoothly across the past 60 seconds with instant pitch canvas updates of all 22 players and ball positions.
-- **Timecode Readout:** Shows current scrubbed match clock (`63:42`) and live clock (`LIVE: 64:12 (-0:30s)`).
-- **Instant "GO TO LIVE" Catch-Up:** Displays a pulsing `● LIVE` badge when synchronized with real time; automatically switches to a glowing amber `⤏ GO TO LIVE (-0:XXs)` button when behind live for instant synchronization.
-
-### 🏟️ FIFA Regulation Pitch Geometry on Both Canvases
-Both the main 2D Tactical Pitch [`PitchCanvas.tsx`] and the AI Vision Inspector [`VisionInspectorModal.tsx`] feature hairline-precision FIFA regulation geometry:
-- 16 alternating tonal mowing grass bands.
-- Outer pitch boundary and halfway line.
-- Center circle and center spot ($9.15\text{m}$ radius).
-- Both 18-yard penalty boxes ($16.5\text{m} \times 40.32\text{m}$) and 6-yard goal areas ($5.5\text{m} \times 18.32\text{m}$).
-- Penalty spots ($11\text{m}$) and $9.15\text{m}$ penalty D-arcs.
-- $7.32\text{m}$ goal net frames.
-- 4 corner arcs ($1\text{m}$ radius).
-- Obsidian Emerald radial gradient background.
-
-### 🤖 Verifier Guardrail Pattern & Inline Hallucination Strikethrough
 ```mermaid
 sequenceDiagram
     autonumber
