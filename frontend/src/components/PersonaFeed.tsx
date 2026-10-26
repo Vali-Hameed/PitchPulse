@@ -65,13 +65,7 @@ export const PersonaFeed: React.FC<PersonaFeedProps> = ({
     if (!trimmed || !onAskPundit || isAsking) return;
     setIsAsking(true);
     try {
-      const resOverlay = await onAskPundit(trimmed, clubLens);
-      if (resOverlay && onSpeakText) {
-        const trans = resOverlay.personas?.translations || {};
-        const langPack = trans[selectedLanguage] || trans["en"] || {};
-        const spoken = langPack[selectedPersona] || resOverlay.headline;
-        onSpeakText(spoken, selectedLanguage);
-      }
+      await onAskPundit(trimmed, clubLens);
       setQuestionInput("");
     } finally {
       setIsAsking(false);

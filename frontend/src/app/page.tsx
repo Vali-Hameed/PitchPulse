@@ -66,11 +66,11 @@ export default function BroadcastControlDeckPage() {
   const isPlayerCamActive = selectedPersona === "player_focus";
 
   // Web Speech API multilingual speech synthesis with Chromium GC protection & voice matching
-  const speakText = useCallback((text: string, lang: LanguageCode, force: boolean = true) => {
+  const speakText = useCallback((text: string, lang: LanguageCode, force: boolean = false) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
 
-    // If not manually triggered and audio toggle is OFF, do not speak
-    if (!force && !isAudioEnabledRef.current) return;
+    // If audio toggle is OFF, strictly do not play audio
+    if (!isAudioEnabledRef.current && !force) return;
 
     try {
       // 1. Cancel previous speech to prevent overlapping queues
