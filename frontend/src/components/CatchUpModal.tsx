@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   Clock,
   Loader2,
+  Play,
   X,
   Zap,
   Volume2,
@@ -25,6 +26,7 @@ interface CatchUpModalProps {
     lang: LanguageCode,
     club: TeamCode
   ) => Promise<RecapResponse | null>;
+  onReplayScenario?: (scenarioId: string) => void;
   onSpeakText?: (text: string, lang: LanguageCode) => void;
 }
 
@@ -34,21 +36,27 @@ export const CatchUpModal: React.FC<CatchUpModalProps> = ({
   selectedPersona,
   selectedLanguage,
   onFetchRecap,
+  onReplayScenario,
   onSpeakText,
 }) => {
   const [club, setClub] = useState<TeamCode>("NLR");
+  const [modalPersona, setModalPersona] = useState<PersonaMode>(selectedPersona);
   const [recapData, setRecapData] = useState<RecapResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    setModalPersona(selectedPersona);
+  }, [selectedPersona]);
+
+  useEffect(() => {
     if (isOpen) {
       setLoading(true);
-      onFetchRecap(selectedPersona, selectedLanguage, club).then((data) => {
+      onFetchRecap(modalPersona, selectedLanguage, club).then((data) => {
         setRecapData(data);
         setLoading(false);
       });
     }
-  }, [isOpen, selectedPersona, selectedLanguage, club, onFetchRecap]);
+  }, [isOpen, modalPersona, selectedLanguage, club, onFetchRecap]);
 
   if (!isOpen) return null;
 
@@ -112,7 +120,7 @@ export const CatchUpModal: React.FC<CatchUpModalProps> = ({
           <div className="bg-[#0D0F12] border border-white/10 p-2.5 rounded-xl flex flex-col justify-center">
             <span className="text-[10px] text-zinc-500 uppercase font-sans">Active Persona</span>
             <span className="text-xs font-semibold text-zinc-200 mt-0.5 capitalize font-sans">
-              {selectedPersona.replace("_", " ")}
+              {modalPersona.replace("_", " ")}
             </span>
           </div>
 
@@ -124,13 +132,13 @@ export const CatchUpModal: React.FC<CatchUpModalProps> = ({
           </div>
         </div>
 
-        {/* Club Perspective Switcher */}
-        <div className="flex items-center justify-between bg-[#0D0F12] border border-white/10 p-1.5 rounded-xl text-xs font-sans">
-          <span className="text-zinc-400 pl-2">Perspective Filter:</span>
-          <div className="flex items-center gap-1">
+        {/* Club & Persona Perspective Switcher */}
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-[#0D0F12] border border-white/10 p-2 rounded-xl text-xs font-sans">
+          <div className="flex items-center gap-1.5">
+            <span className="text-zinc-500 text-[10px] font-mono uppercase pl-1">Club Lens:</span>
             <button
               onClick={() => setClub("NLR")}
-              className={`px-3 py-1 rounded-lg transition-all font-semibold ${
+              className={`px-2.5 py-1 rounded-lg transition-all font-semibold ${
                 club === "NLR"
                   ? "bg-nlr text-white shadow-sm"
                   : "text-zinc-400 hover:text-white"
@@ -140,7 +148,7 @@ export const CatchUpModal: React.FC<CatchUpModalProps> = ({
             </button>
             <button
               onClick={() => setClub("MSB")}
-              className={`px-3 py-1 rounded-lg transition-all font-semibold ${
+              className={`px-2.5 py-1 rounded-lg transition-all font-semibold ${
                 club === "MSB"
                   ? "bg-msb text-white shadow-sm"
                   : "text-zinc-400 hover:text-white"
@@ -148,6 +156,28 @@ export const CatchUpModal: React.FC<CatchUpModalProps> = ({
             >
               Merseyside Blue (MSB)
             </button>
+          </div>
+
+          <div className="flex items-center gap-1 bg-[#07080A] p-0.5 rounded-lg border border-white/10 text-[11px]">
+            {(
+              [
+                { id: "analyst", label: "Analyst" },
+                { id: "casual", label: "Casual" },
+                { id: "player_focus", label: "Player Cam" },
+              ] as const
+            ).map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setModalPersona(p.id)}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                  modalPersona === p.id
+                    ? "bg-white/15 text-studio-gold font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -178,6 +208,19 @@ export const CatchUpModal: React.FC<CatchUpModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {onReplayScenario && (
+                      <button
+                        onClick={() => {
+                          onReplayScenario(bullet.scenario_id || `scen_${(idx % 5) + 1}`);
+                          onClose();
+                        }}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded bg-studio-gold/15 hover:bg-studio-gold/25 border border-studio-gold/30 text-studio-gold text-[10px] font-mono font-bold transition-colors"
+                        title="Replay this tactical moment live on the 2D pitch"
+                      >
+                        <Play className="w-2.5 h-2.5 fill-current" />
+                        <span>Replay on Pitch</span>
+                      </button>
+                    )}
                     {onSpeakText && (
                       <button
                         onClick={() => onSpeakText(`${bullet.headline}. ${bullet.text}`, selectedLanguage)}
