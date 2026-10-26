@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+const internalBackendUrl =
+  process.env.INTERNAL_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://backend:8000";
+
 const nextConfig = {
   output: "standalone",
   reactStrictMode: false,
@@ -6,7 +11,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://backend:8000/api/:path*",
+        destination: `${internalBackendUrl}/api/:path*`,
       },
     ];
   },

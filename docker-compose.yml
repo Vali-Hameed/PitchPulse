@@ -4,14 +4,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
-    environment:
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
-      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-4o}
-      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-08-01-preview}
-      - DEPLOYMENT_REGION=${DEPLOYMENT_REGION:-WestUS}
-      - PORT=8000
+      - "${PORT:-8000}:8000"
+    env_file:
+      - path: ./.env
+        required: false
+      - path: ./backend/.env
+        required: false
     volumes:
       - ./backend/app:/app/app
 
@@ -21,9 +19,15 @@ services:
       dockerfile: Dockerfile
       target: dev
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
+    env_file:
+      - path: ./.env
+        required: false
+      - path: ./frontend/.env
+        required: false
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - INTERNAL_BACKEND_URL=${INTERNAL_BACKEND_URL:-http://backend:8000}
       - WATCHPACK_POLLING=true
     volumes:
       - ./frontend/src:/app/src
