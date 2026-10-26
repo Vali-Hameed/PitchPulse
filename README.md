@@ -59,9 +59,9 @@
 
 ## 2. 🎥 Demonstration Video & Walkthrough
 
-[![Watch the 110-Second Demo Video](https://img.shields.io/badge/YouTube-Watch%20Demo%20Video%20(1:50)-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/YOUR_VIDEO_ID)
+[![Watch the 114-Second Demo Video](https://img.shields.io/badge/YouTube-Watch%20Demo%20Video%20(1:54)-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/Lz1iXk-QYMg)
 
-> 💡 **Public Submission Video URL:** *Replace `https://youtu.be/YOUR_VIDEO_ID` with your public YouTube or Vimeo video link.*  
+> 💡 **Public Submission Video URL:** `https://youtu.be/Lz1iXk-QYMg`  
 > 📄 **Standalone Script:** Full production guide also available in [`docs/DEMO_VIDEO_SCRIPT.md`](docs/DEMO_VIDEO_SCRIPT.md).
 
 <details>
