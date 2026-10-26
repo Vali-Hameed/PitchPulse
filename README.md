@@ -57,7 +57,32 @@
 
 ---
 
-## 2. Alignment with Official Hackathon Judging Rubric
+## 2. 🎥 Demonstration Video & Walkthrough
+
+[![Watch the 110-Second Demo Video](https://img.shields.io/badge/YouTube-Watch%20Demo%20Video%20(1:50)-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/YOUR_VIDEO_ID)
+
+> 💡 **Public Submission Video URL:** *Replace `https://youtu.be/YOUR_VIDEO_ID` with your public YouTube or Vimeo video link.*  
+> 📄 **Standalone Script:** Full production guide also available in [`docs/DEMO_VIDEO_SCRIPT.md`](docs/DEMO_VIDEO_SCRIPT.md).
+
+<details>
+<summary><b>📜 Click to expand the 110-Second Video Narration Script & Rubric Timestamp Guide</b></summary>
+<br />
+
+| Timestamp | Visual Demonstration | Spoken Voiceover Narration | Rubric Alignment (20% Each) |
+|---|---|---|---|
+| **0:00 – 0:10** | Facecam over live 10Hz pitch | *"Hi, I'm [Your Name]. Live football broadcasters want AI match intelligence—but they can't put unverified LLM hallucinations or robotic translations on air. Meet PitchPulse Studio."* | **3. Real-World Impact & Problem Hook** |
+| **0:10 – 0:30** | 5-Stage Pipeline Strip, Voronoi territory control & xT heatmaps | *"Built with FastAPI, Next.js, and Azure OpenAI GPT-4o on Azure Container Apps, PitchPulse streams 10-Hertz synthetic tracking data through a visible five-stage pipeline. Before any LLM is called, our deterministic spatial engine computes Voronoi pitch control, Expected Threat delta, Pass Difficulty from 0 to 99, and a real-time Chaos Index."* | **1. Technological Implementation** |
+| **0:30 – 0:52** | Scenario `05 Verifier Audit`, inline strikethrough diff (`~4~ → 2`), Receipts Drawer & `pl.studio.overlay.v2` JSON | *"Here is our core innovation: a three-agent Narrator, Verifier, and Cultural Router loop. When we trigger Scenario 5, the Narrator drafts a hallucinated claim that a pass bypassed four defenders. Our deterministic Studio Verifier intercepts it before broadcast, auto-corrects four to two with an inline strikethrough diff, and generates a broadcast-ready overlay JSON receipt."* | **2. Agentic Design & Innovation** |
+| **0:52 – 1:12** | 7 Cultural Dialects (`ES, DE, EN`), 4-second TTS audio solo, Player-Cam & 30s Catch-Up Recap | *"Instead of literal translation, Agent 3 adapts every insight into seven authentic regional broadcast dialects—from Spanish LaLiga radio to German Halbraum analysis—with live speech synthesis: [Pause 3.5s while app speaks]. Fans can also click any player for live Player-Cam telemetry, or generate a club-tailored thirty-second catch-up recap."* | **5. Adherence to Hackathon Category** |
+| **1:12 – 1:30** | Freeze-frame Telestrator, spotlight halo ring, vector arrow, Ask Pundit, 60s DVR Scrubber & `GO TO LIVE` | *"Just like Monday Night Football, analysts can hit Telestrate to freeze play, spotlight tactical pockets, draw run vectors, and click 'Ask Pundit' to query our AI about that exact space. Our sixty-second DVR buffer lets viewers scrub backward, then snap back to live as drawings smoothly fade."* | **4. User Experience & Presentation** |
+| **1:30 – 1:42** | Vision AI Homography Inspector (streaming @ 250ms), Emit Auto-Event, Custom JSON Ingest Lab | *"Finally, our Vision AI Inspector projects bounding boxes into 2D pitch coordinates to auto-emit events into the pipeline, while the JSON Ingest Lab lets developers test custom telemetry payloads on the fly."* | **1 & 2. Technological Implementation** |
+| **1:42 – 1:50** | Facecam closing + GitHub repository callout | *"PitchPulse Studio turns raw football data into verified, real-time broadcast storytelling. All code is public on GitHub—thanks for watching!"* | **3. Production Deployment Readiness** |
+
+</details>
+
+---
+
+## 3. Alignment with Official Hackathon Judging Rubric
 
 | Judging Criterion (20% Each) | How PitchPulse Studio Delivers |
 |---|---|
@@ -69,7 +94,7 @@
 
 ---
 
-## 3. Cloud & Multi-Agent Architecture
+## 4. Cloud & Multi-Agent Architecture
 
 ```mermaid
 flowchart TB
@@ -121,7 +146,7 @@ flowchart TB
 
 ---
 
-## 4. Key Capabilities & Feature Highlights
+## 5. Key Capabilities & Feature Highlights
 
 ### 📺 Interactive TV Pitch Telestrator (`PitchTelestrator.tsx`)
 - **Freeze-Frame Analysis:** Clicking `Telestrate` immediately pauses the simulation, locking all 22 player tokens and the ball in place for tactical review.
@@ -134,25 +159,6 @@ flowchart TB
 - **Smart Broadcast Auto-Fade:** When playback resumes and drawings are unpinned, strokes smoothly fade out over 3.5 seconds using a `requestAnimationFrame` alpha interpolator (matching Sky Sports / BBC MOTD).
 - **One-Click "Ask Studio Pundit":** Calculates the spatial centroid of all active drawing strokes and queries `POST /api/studio/ask` to generate verified AI tactical commentary for that exact pitch zone.
 
-### ⏪ 60-Second Rolling Broadcast DVR Scrubber (`PitchDVRBar.tsx`)
-- **Zero-Latency Ring Buffer:** Stores up to 600 frames (60 seconds at 10Hz) in client-side memory with zero network roundtrips during scrubbing.
-- **Hardware Director Transport:** Play / Pause freeze-frame toggle, discrete $-5\text{s}$ and $+5\text{s}$ nudge buttons, and $1\times, 2\times, 4\times$ speed multipliers.
-- **Interactive Scrubber Slider Track:** Drag smoothly across the past 60 seconds with instant pitch canvas updates of all 22 players and ball positions.
-- **Timecode Readout:** Shows current scrubbed match clock (`63:42`) and live clock (`LIVE: 64:12 (-0:30s)`).
-- **Instant "GO TO LIVE" Catch-Up:** Displays a pulsing `● LIVE` badge when synchronized with real time; automatically switches to a glowing amber `⤏ GO TO LIVE (-0:XXs)` button when behind live for instant synchronization.
-
-### 🏟️ FIFA Regulation Pitch Geometry on Both Canvases
-Both the main 2D Tactical Pitch [`PitchCanvas.tsx`] and the AI Vision Inspector [`VisionInspectorModal.tsx`] feature hairline-precision FIFA regulation geometry:
-- 16 alternating tonal mowing grass bands.
-- Outer pitch boundary and halfway line.
-- Center circle and center spot ($9.15\text{m}$ radius).
-- Both 18-yard penalty boxes ($16.5\text{m} \times 40.32\text{m}$) and 6-yard goal areas ($5.5\text{m} \times 18.32\text{m}$).
-- Penalty spots ($11\text{m}$) and $9.15\text{m}$ penalty D-arcs.
-- $7.32\text{m}$ goal net frames.
-- 4 corner arcs ($1\text{m}$ radius).
-- Obsidian Emerald radial gradient background.
-
-### 🤖 Verifier Guardrail Pattern & Inline Hallucination Strikethrough
 ### ⏪ 60-Second Rolling Broadcast DVR Scrubber (`PitchDVRBar.tsx`)
 - **Zero-Latency Ring Buffer:** Stores up to 600 frames (60 seconds at 10Hz) in client-side memory with zero network roundtrips during scrubbing.
 - **Hardware Director Transport:** Play / Pause freeze-frame toggle, discrete $-5\text{s}$ and $+5\text{s}$ nudge buttons, and $1\times, 2\times, 4\times$ speed multipliers.
@@ -196,7 +202,7 @@ sequenceDiagram
 
 ---
 
-## 5. Deterministic Football Metric Formulas
+## 6. Deterministic Football Metric Formulas
 
 $$\Delta xT = xT(x_{\text{end}}, y_{\text{end}}) - xT(x_{\text{start}}, y_{\text{start}})$$
 
@@ -208,7 +214,7 @@ Where $P$ is Pressure Index ($0\text{–}100\%$), $D$ is spatial pass distance i
 
 ---
 
-## 6. Strict Trademark & Synthetic Data Compliance
+## 7. Strict Trademark & Synthetic Data Compliance
 
 Per hackathon rules, all match telemetry is 100% synthetic and all club/player identities are fictional:
 
@@ -219,7 +225,7 @@ Per hackathon rules, all match telemetry is 100% synthetic and all club/player i
 
 ---
 
-## 7. Quick Start & Docker Deployment
+## 8. Quick Start & Docker Deployment
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
@@ -253,7 +259,7 @@ docker compose exec backend pytest -v
 
 ---
 
-## 8. Azure Container Apps (ACA) Cloud Deployment
+## 9. Azure Container Apps (ACA) Cloud Deployment
 
 PitchPulse Studio includes an automated PowerShell deployment script (`infra/deploy-aca.ps1`) for Microsoft Azure:
 
@@ -270,7 +276,7 @@ az login
 
 ---
 
-## 9. License
+## 10. License
 
 Built for the Microsoft & Premier League *"Inside the Game: Developer Hackathon"*. Distributed under the MIT License.
 
