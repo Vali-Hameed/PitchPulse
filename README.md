@@ -176,6 +176,8 @@ docker compose up --build -d
 - **Studio Broadcast Deck:** [http://localhost:3000](http://localhost:3000)
 - **FastAPI SSE & Telemetry API:** [http://localhost:8000](http://localhost:8000)
 - **Custom Event Ingest Endpoint:** `POST http://localhost:8000/api/events/ingest`
+- **Interactive Studio Pundit Q&A Endpoint:** `POST http://localhost:8000/api/studio/ask`
+- **Club & Persona-Tailored Recap Endpoint:** `GET http://localhost:8000/api/recap?persona=analyst&lang=en&club=NLR`
 - **Engine Health Endpoint:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
 ### Running the Automated Test Suite
