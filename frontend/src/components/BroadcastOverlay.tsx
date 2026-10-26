@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, X } from "lucide-react";
 import {
   ALL_PLAYERS,
   BroadcastOverlayPayload,
@@ -15,6 +15,7 @@ interface BroadcastOverlayProps {
   selectedLanguage: LanguageCode;
   selectedPlayerId?: string;
   onOpenReceipts: (overlay: BroadcastOverlayPayload) => void;
+  onDismiss?: () => void;
 }
 
 export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
@@ -23,6 +24,7 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
   selectedLanguage,
   selectedPlayerId,
   onOpenReceipts,
+  onDismiss,
 }) => {
   const [visible, setVisible] = useState<boolean>(false);
 
@@ -152,8 +154,8 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
           </div>
         </div>
 
-        {/* Right: Authoritative Verification Receipt Trigger */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-white/10 shrink-0">
+        {/* Right: Authoritative Verification Receipt Trigger & Dismiss Cross */}
+        <div className="flex items-center gap-1.5 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-white/10 shrink-0">
           <button
             onClick={() => onOpenReceipts(overlay)}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition-all shadow-md active:scale-95 whitespace-nowrap border ${
@@ -172,6 +174,18 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
               {isCorrected ? "Inspect Diff & Receipt" : "Verified Receipt"}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+          </button>
+
+          <button
+            onClick={() => {
+              setVisible(false);
+              onDismiss?.();
+            }}
+            className="p-1.5 rounded-lg bg-[#14171D] hover:bg-[#1E232D] border border-white/10 text-zinc-400 hover:text-white transition-colors"
+            title="Dismiss event overlay"
+            aria-label="Dismiss event overlay"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>

@@ -243,6 +243,7 @@ export default function BroadcastControlDeckPage() {
               selectedLanguage={selectedLanguage}
               selectedPlayerId={selectedPlayerId}
               onOpenReceipts={(ovl) => setInspectedOverlay(ovl)}
+              onDismiss={() => setActiveOverlay(null)}
             />
           </div>
 
