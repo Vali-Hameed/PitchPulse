@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   BroadcastOverlayPayload,
   CustomEventIngestRequest,
+  DVRFrameSnapshot,
   FramePayload,
   HealthResponse,
   LanguageCode,
@@ -30,6 +31,12 @@ export function useMatchStream() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [playbackSpeed, setPlaybackSpeed] = useState<1 | 2 | 4>(1);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
+
+  // 60-Second Rolling Circular DVR Buffer (600 frames at 10Hz)
+  const dvrBufferRef = useRef<DVRFrameSnapshot[]>([]);
+  const [dvrBufferLength, setDvrBufferLength] = useState<number>(0);
+  const [scrubIndex, setScrubIndex] = useState<number>(-1); // -1 indicates LIVE stream head
+  const latestMatchClockRef = useRef<string>("64:12");
 
   // Buffer of incoming frames for the 300ms LERP canvas interpolator
   // Stored in a ref to decouple 10Hz stream ingestion from React component render tree
@@ -87,6 +94,20 @@ export function useMatchStream() {
             if (buf.length > 12) {
               buf.shift();
             }
+
+            // Push to rolling 60s DVR circular buffer (600 frames at 10Hz)
+            const snap: DVRFrameSnapshot = {
+              frame,
+              matchClock: latestMatchClockRef.current || "64:12",
+              timestampSec: Date.now() / 1000,
+            };
+            const dvr = dvrBufferRef.current;
+            dvr.push(snap);
+            if (dvr.length > 600) {
+              dvr.shift();
+              setScrubIndex((prev) => (prev > 0 ? prev - 1 : prev));
+            }
+            setDvrBufferLength(dvr.length);
           } catch (err) {
             console.error("Failed to parse frame", err);
           }
@@ -96,6 +117,7 @@ export function useMatchStream() {
           try {
             const tick: MatchTickPayload = JSON.parse(e.data);
             setLatestTick(tick);
+            latestMatchClockRef.current = tick.match_clock;
             setScoreState((prev) => ({
               ...prev,
               match_clock: tick.match_clock,
@@ -156,6 +178,9 @@ export function useMatchStream() {
           setActiveOverlay(null);
           setOverlayHistory([]);
           frameBufferRef.current = [];
+          dvrBufferRef.current = [];
+          setScrubIndex(-1);
+          setDvrBufferLength(0);
         }
 
         await fetch(`${API_BASE}/api/control`, {
@@ -292,6 +317,67 @@ export function useMatchStream() {
     []
   );
 
+  // Step through historical DVR frames when playing back behind live
+  useEffect(() => {
+    if (!isPlaying || scrubIndex < 0) return;
+
+    const intervalMs = Math.max(25, Math.floor(100 / playbackSpeed));
+    const timer = setInterval(() => {
+      setScrubIndex((prev) => {
+        if (prev < 0) return -1;
+        const total = dvrBufferRef.current.length;
+        if (prev + 1 >= total - 1) {
+          return -1; // Caught back up to live!
+        }
+        return prev + 1;
+      });
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [isPlaying, scrubIndex, playbackSpeed]);
+
+  const scrubToFraction = useCallback((frac: number) => {
+    const total = dvrBufferRef.current.length;
+    if (total === 0) return;
+    if (frac >= 0.98) {
+      setScrubIndex(-1); // Live
+    } else {
+      const idx = Math.min(total - 1, Math.max(0, Math.floor(frac * (total - 1))));
+      setScrubIndex(idx);
+    }
+  }, []);
+
+  const nudgeDVR = useCallback((deltaSeconds: number) => {
+    const total = dvrBufferRef.current.length;
+    if (total === 0) return;
+    const deltaFrames = Math.round(deltaSeconds * 10);
+    setScrubIndex((prev) => {
+      const current = prev < 0 ? total - 1 : prev;
+      const target = current + deltaFrames;
+      if (target >= total - 1) {
+        return -1; // Back to live
+      }
+      return Math.max(0, target);
+    });
+  }, []);
+
+  const jumpToLive = useCallback(() => {
+    setScrubIndex(-1);
+  }, []);
+
+  const isLive = scrubIndex === -1;
+  const timeShiftedSnapshot: DVRFrameSnapshot | null =
+    scrubIndex >= 0 && dvrBufferRef.current[scrubIndex]
+      ? dvrBufferRef.current[scrubIndex]
+      : null;
+  const secondsBehindLive =
+    scrubIndex >= 0
+      ? Math.max(
+          0,
+          Math.round(((dvrBufferRef.current.length - 1 - scrubIndex) * 0.1) * 10) / 10
+        )
+      : 0;
+
   return {
     isConnected,
     scoreState,
@@ -302,11 +388,21 @@ export function useMatchStream() {
     playbackSpeed,
     isPlaying,
     frameBufferRef,
+    dvrBufferRef,
+    dvrBufferLength,
+    scrubIndex,
+    isLive,
+    secondsBehindLive,
+    timeShiftedSnapshot,
+    scrubToFraction,
+    nudgeDVR,
+    jumpToLive,
     control,
     injectScenario,
     ingestCustomEvent,
     askStudioPundit,
     fetchRecap,
     setActiveOverlay,
+    setIsPlaying,
   };
 }

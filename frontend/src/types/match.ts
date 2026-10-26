@@ -295,3 +295,31 @@ export const CULTURAL_DIALECT_LABELS: Record<
   pt: { region: "Brasil / PT", dialect: "Mesa Tática Brasileirão" },
   de: { region: "DACH", dialect: "Bundesliga Halbraum & Gegenpressing" },
 };
+
+// ==========================================
+// Telestrator & Broadcast DVR Definitions
+// ==========================================
+
+export type TelestrationTool = "pen" | "arrow" | "ring";
+export type TelestrationColor = "#E5C158" | "#E11D48" | "#2563EB" | "#FFFFFF";
+
+export interface TelestrationPoint {
+  x: number; // Pitch meters 0..105
+  y: number; // Pitch meters 0..68
+}
+
+export interface TelestrationStroke {
+  id: string;
+  tool: TelestrationTool;
+  color: TelestrationColor;
+  width: number;
+  points: TelestrationPoint[];
+  timestamp: number;
+}
+
+export interface DVRFrameSnapshot {
+  frame: FramePayload;
+  matchClock: string;
+  timestampSec: number;
+}
+

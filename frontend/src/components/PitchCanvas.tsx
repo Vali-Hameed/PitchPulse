@@ -4,10 +4,12 @@ import React, { useEffect, useRef, useState } from "react";
 import { Grid, Layers, Zap } from "lucide-react";
 import {
   BroadcastOverlayPayload,
+  DVRFrameSnapshot,
   FramePayload,
   MatchTickPayload,
   PlayerPosition,
 } from "@/types/match";
+import { PitchTelestrator } from "@/components/PitchTelestrator";
 
 interface PitchCanvasProps {
   frameBufferRef: React.MutableRefObject<FramePayload[]>;
@@ -16,6 +18,12 @@ interface PitchCanvasProps {
   isPlayerCamActive: boolean;
   selectedPlayerId: string;
   onSelectPlayer: (playerId: string) => void;
+  timeShiftedSnapshot?: DVRFrameSnapshot | null;
+  isLive?: boolean;
+  isTelestratorActive?: boolean;
+  isPlaying?: boolean;
+  onCloseTelestrator?: () => void;
+  onAskPunditAboutArea?: (centroidX: number, centroidY: number) => void;
 }
 
 const PITCH_LENGTH = 105.0;
@@ -38,6 +46,12 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
   isPlayerCamActive,
   selectedPlayerId,
   onSelectPlayer,
+  timeShiftedSnapshot = null,
+  isLive = true,
+  isTelestratorActive = false,
+  isPlaying = true,
+  onCloseTelestrator,
+  onAskPunditAboutArea,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [showXtGrid, setShowXtGrid] = useState<boolean>(false);
@@ -60,6 +74,7 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
 
   // Click-to-select player directly on pitch
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isTelestratorActive) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -129,32 +144,38 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
         ctx.fillRect(s * stripeW, 0, stripeW, height);
       }
 
-      // Buffer interpolation
-      const buffer = frameBufferRef.current;
+      // Buffer interpolation & Time-Shifted DVR Snapshot
       let displayPlayers: PlayerPosition[] = [];
       let ballX = 52.5;
       let ballY = 34.0;
 
-      if (buffer.length >= 2) {
-        const f0 = buffer[0];
-        const f1 = buffer[1];
-        const alpha = 0.5;
+      if (!isLive && timeShiftedSnapshot) {
+        displayPlayers = timeShiftedSnapshot.frame.players;
+        ballX = timeShiftedSnapshot.frame.ball.x;
+        ballY = timeShiftedSnapshot.frame.ball.y;
+      } else {
+        const buffer = frameBufferRef.current;
+        if (buffer.length >= 2) {
+          const f0 = buffer[0];
+          const f1 = buffer[1];
+          const alpha = 0.5;
 
-        displayPlayers = f1.players.map((p1) => {
-          const p0 = f0.players.find((p) => p.player_id === p1.player_id) || p1;
-          return {
-            ...p1,
-            x: p0.x + (p1.x - p0.x) * alpha,
-            y: p0.y + (p1.y - p0.y) * alpha,
-          };
-        });
+          displayPlayers = f1.players.map((p1) => {
+            const p0 = f0.players.find((p) => p.player_id === p1.player_id) || p1;
+            return {
+              ...p1,
+              x: p0.x + (p1.x - p0.x) * alpha,
+              y: p0.y + (p1.y - p0.y) * alpha,
+            };
+          });
 
-        ballX = f0.ball.x + (f1.ball.x - f0.ball.x) * alpha;
-        ballY = f0.ball.y + (f1.ball.y - f0.ball.y) * alpha;
-      } else if (buffer.length === 1) {
-        displayPlayers = buffer[0].players;
-        ballX = buffer[0].ball.x;
-        ballY = buffer[0].ball.y;
+          ballX = f0.ball.x + (f1.ball.x - f0.ball.x) * alpha;
+          ballY = f0.ball.y + (f1.ball.y - f0.ball.y) * alpha;
+        } else if (buffer.length === 1) {
+          displayPlayers = buffer[0].players;
+          ballX = buffer[0].ball.x;
+          ballY = buffer[0].ball.y;
+        }
       }
 
       latestRenderedPlayersRef.current = displayPlayers;
@@ -491,7 +512,15 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [showXtGrid, showVoronoi, activeOverlay, isPlayerCamActive, selectedPlayerId]);
+  }, [
+    showXtGrid,
+    showVoronoi,
+    activeOverlay,
+    isPlayerCamActive,
+    selectedPlayerId,
+    isLive,
+    timeShiftedSnapshot,
+  ]);
 
   return (
     <div className="relative w-full aspect-[105/68] bg-[#07080A] rounded-xl overflow-hidden border border-white/10 shadow-2xl">
@@ -502,6 +531,14 @@ export const PitchCanvas: React.FC<PitchCanvasProps> = ({
         onClick={handleCanvasClick}
         className="w-full h-full object-contain cursor-crosshair"
         title="Click on any player to focus Player-Cam"
+      />
+
+      {/* Interactive Broadcast Telestrator Drawing Layer */}
+      <PitchTelestrator
+        isActive={isTelestratorActive}
+        isPlaying={isPlaying}
+        onClose={onCloseTelestrator ?? (() => {})}
+        onAskPunditAboutArea={onAskPunditAboutArea}
       />
 
       {/* Top Left Pitch Canvas Overlays Toolbar */}

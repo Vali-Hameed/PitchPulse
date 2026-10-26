@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { TopControlBar } from "@/components/TopControlBar";
 import { PipelineStatusStrip } from "@/components/PipelineStatusStrip";
 import { PitchCanvas } from "@/components/PitchCanvas";
+import { PitchDVRBar } from "@/components/PitchDVRBar";
 import { BroadcastOverlay } from "@/components/BroadcastOverlay";
 import { MomentumGauge } from "@/components/MomentumGauge";
 import { PersonaFeed } from "@/components/PersonaFeed";
@@ -29,6 +30,14 @@ export default function BroadcastControlDeckPage() {
     playbackSpeed,
     isPlaying,
     frameBufferRef,
+    dvrBufferLength,
+    scrubIndex,
+    isLive,
+    secondsBehindLive,
+    timeShiftedSnapshot,
+    scrubToFraction,
+    nudgeDVR,
+    jumpToLive,
     control,
     injectScenario,
     ingestCustomEvent,
@@ -45,6 +54,7 @@ export default function BroadcastControlDeckPage() {
   const [isVisionOpen, setIsVisionOpen] = useState<boolean>(false);
   const [isIngestOpen, setIsIngestOpen] = useState<boolean>(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
+  const [isTelestratorActive, setIsTelestratorActive] = useState<boolean>(false);
 
   // Persistent refs for bulletproof Web Speech API audio lifecycle & GC protection
   const isAudioEnabledRef = useRef<boolean>(false);
@@ -193,6 +203,14 @@ export default function BroadcastControlDeckPage() {
     setSelectedPersona("player_focus");
   };
 
+  const handleAskPunditAboutArea = useCallback(
+    (centroidX: number, centroidY: number) => {
+      const q = `What are the tactical opportunities, passing angles, or defensive risks in the highlighted zone around (${centroidX}m, ${centroidY}m)?`;
+      askStudioPundit(q, selectedPersona, selectedLanguage, selectedPlayerId, "ALL");
+    },
+    [askStudioPundit, selectedPersona, selectedLanguage, selectedPlayerId]
+  );
+
   return (
     <main className="min-h-screen bg-[#07080A] flex flex-col text-[#F4F4F6]">
       {/* 1. Master Top Control Bar */}
@@ -226,8 +244,8 @@ export default function BroadcastControlDeckPage() {
             onOpenIngest={() => setIsIngestOpen(true)}
           />
 
-          {/* Pitch Container with Embedded Lower-Third Broadcast Chyron */}
-          <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#07080A]">
+          {/* Pitch Container with Embedded Lower-Third Broadcast Chyron & Telestrator */}
+          <div className="relative w-full rounded-t-xl overflow-hidden shadow-2xl border-t border-x border-white/10 bg-[#07080A]">
             <PitchCanvas
               frameBufferRef={frameBufferRef}
               latestTick={latestTick}
@@ -235,6 +253,12 @@ export default function BroadcastControlDeckPage() {
               isPlayerCamActive={isPlayerCamActive}
               selectedPlayerId={selectedPlayerId}
               onSelectPlayer={handleSelectPlayer}
+              timeShiftedSnapshot={timeShiftedSnapshot}
+              isLive={isLive}
+              isTelestratorActive={isTelestratorActive}
+              isPlaying={isPlaying}
+              onCloseTelestrator={() => setIsTelestratorActive(false)}
+              onAskPunditAboutArea={handleAskPunditAboutArea}
             />
 
             {/* Broadcast Lower-Third Chyron Graphic */}
@@ -247,6 +271,31 @@ export default function BroadcastControlDeckPage() {
               onDismiss={() => setActiveOverlay(null)}
             />
           </div>
+
+          {/* Integrated 60-Second Broadcast DVR Scrubber Console */}
+          <PitchDVRBar
+            isPlaying={isPlaying}
+            onTogglePlay={() => control(isPlaying ? "pause" : "play")}
+            playbackSpeed={playbackSpeed}
+            onChangeSpeed={(spd) => control("speed", spd)}
+            isLive={isLive}
+            secondsBehindLive={secondsBehindLive}
+            scrubIndex={scrubIndex}
+            dvrBufferLength={dvrBufferLength}
+            currentMatchClock={timeShiftedSnapshot?.matchClock || scoreState.match_clock}
+            liveMatchClock={scoreState.match_clock}
+            onNudge={nudgeDVR}
+            onScrub={scrubToFraction}
+            onJumpToLive={jumpToLive}
+            isTelestratorActive={isTelestratorActive}
+            onToggleTelestrator={() => {
+              const next = !isTelestratorActive;
+              setIsTelestratorActive(next);
+              if (next && isPlaying) {
+                control("pause");
+              }
+            }}
+          />
 
           {/* F1-Style Precision Linear Telemetry Strip & Territory Bar */}
           <MomentumGauge metrics={latestTick?.metrics ?? null} />
