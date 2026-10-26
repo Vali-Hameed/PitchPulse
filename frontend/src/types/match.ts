@@ -232,6 +232,15 @@ export interface RecapBullet {
   text: string;
   event_id: number;
   tag: string;
+  scenario_id?: string | null;
+}
+
+export interface StudioAskRequest {
+  question: string;
+  persona: PersonaMode;
+  lang: LanguageCode;
+  player_id?: string;
+  club?: ClubLens;
 }
 
 export interface RecapResponse {

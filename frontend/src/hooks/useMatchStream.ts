@@ -220,6 +220,45 @@ export function useMatchStream() {
     []
   );
 
+  const askStudioPundit = useCallback(
+    async (
+      question: string,
+      persona: PersonaMode,
+      lang: LanguageCode,
+      playerId?: string,
+      club: "ALL" | "NLR" | "MSB" = "ALL"
+    ): Promise<BroadcastOverlayPayload | null> => {
+      try {
+        const res = await fetch(`${API_BASE}/api/studio/ask`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question,
+            persona,
+            lang,
+            player_id: playerId || "NLR-8",
+            club,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.overlay) {
+            setActiveOverlay(data.overlay);
+            setOverlayHistory((prev) => [
+              data.overlay,
+              ...prev.filter((o) => o.overlay_id !== data.overlay.overlay_id),
+            ]);
+            return data.overlay;
+          }
+        }
+      } catch (err) {
+        console.error("Studio Q&A failed", err);
+      }
+      return null;
+    },
+    []
+  );
+
   const fetchRecap = useCallback(
     async (
       persona: PersonaMode,
@@ -253,6 +292,7 @@ export function useMatchStream() {
     control,
     injectScenario,
     ingestCustomEvent,
+    askStudioPundit,
     fetchRecap,
     setActiveOverlay,
   };

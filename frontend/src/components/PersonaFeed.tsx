@@ -6,8 +6,11 @@ import {
   BarChart3,
   Flame,
   Globe,
+  Loader2,
+  MessageSquare,
   Radio,
   Receipt,
+  Send,
   ShieldCheck,
   SlidersHorizontal,
   Target,
@@ -32,7 +35,14 @@ interface PersonaFeedProps {
   onSelectLanguage: (lang: LanguageCode) => void;
   onOpenReceipts: (overlay: BroadcastOverlayPayload) => void;
   onSpeakText?: (text: string, lang: LanguageCode) => void;
+  onAskPundit?: (question: string, club: ClubLens) => Promise<any>;
 }
+
+const STUDIO_PRESET_PROMPTS = [
+  "Why is Chaos spiking?",
+  "Where is NLR finding space?",
+  "Duel: #27 Gueye vs #20 Rice",
+];
 
 export const PersonaFeed: React.FC<PersonaFeedProps> = ({
   overlays,
@@ -43,9 +53,24 @@ export const PersonaFeed: React.FC<PersonaFeedProps> = ({
   onSelectLanguage,
   onOpenReceipts,
   onSpeakText,
+  onAskPundit,
 }) => {
   const [clubLens, setClubLens] = useState<ClubLens>("ALL");
   const [metricLens, setMetricLens] = useState<MetricLens>("all");
+  const [questionInput, setQuestionInput] = useState<string>("");
+  const [isAsking, setIsAsking] = useState<boolean>(false);
+
+  const handleAsk = async (qText: string) => {
+    const trimmed = qText.trim();
+    if (!trimmed || !onAskPundit || isAsking) return;
+    setIsAsking(true);
+    try {
+      await onAskPundit(trimmed, clubLens);
+      setQuestionInput("");
+    } finally {
+      setIsAsking(false);
+    }
+  };
 
   const isArabic = selectedLanguage === "ar";
   const activePlayer =
@@ -377,6 +402,65 @@ export const PersonaFeed: React.FC<PersonaFeedProps> = ({
           </div>
         )}
       </div>
+
+      {/* Interactive 'Ask the Studio Pundit' Copilot Dock */}
+      {onAskPundit && (
+        <div className="p-2.5 border-t border-white/10 bg-[#090A0D] flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-studio-gold font-semibold">
+              <MessageSquare className="w-3 h-3 text-studio-gold" />
+              <span>Ask the Studio Pundit (Telemetry Grounded)</span>
+            </span>
+            <span className="text-[9px] font-mono text-zinc-500">
+              100% Verifier Audited
+            </span>
+          </div>
+
+          {/* 1-Tap Preset Chips */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
+            {STUDIO_PRESET_PROMPTS.map((chip) => (
+              <button
+                key={chip}
+                onClick={() => handleAsk(chip)}
+                disabled={isAsking}
+                className="shrink-0 px-2 py-0.5 rounded bg-[#12151B] hover:bg-white/10 border border-white/10 text-[10px] font-sans text-zinc-300 hover:text-white transition-colors disabled:opacity-50"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+
+          {/* Input Bar */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAsk(questionInput);
+            }}
+            className="flex items-center gap-1.5"
+          >
+            <input
+              type="text"
+              value={questionInput}
+              onChange={(e) => setQuestionInput(e.target.value)}
+              placeholder={`Ask about ${playerLabel}, xT corridors, or pressing...`}
+              disabled={isAsking}
+              className="flex-1 bg-[#07080A] border border-white/10 focus:border-studio-gold/60 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-500 outline-none font-sans"
+            />
+            <button
+              type="submit"
+              disabled={isAsking || !questionInput.trim()}
+              className="px-2.5 py-1.5 rounded-lg bg-studio-gold hover:bg-[#ebd074] text-black font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-40"
+              title="Submit tactical query to Studio Pundit"
+            >
+              {isAsking ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </form>
+        </div>
+      )}
     </aside>
   );
 };

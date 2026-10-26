@@ -32,6 +32,7 @@ export default function BroadcastControlDeckPage() {
     control,
     injectScenario,
     ingestCustomEvent,
+    askStudioPundit,
     fetchRecap,
   } = useMatchStream();
 
@@ -260,6 +261,9 @@ export default function BroadcastControlDeckPage() {
             onSelectLanguage={setSelectedLanguage}
             onOpenReceipts={(ovl) => setInspectedOverlay(ovl)}
             onSpeakText={(text, lang) => speakText(text, lang, true)}
+            onAskPundit={(q, club) =>
+              askStudioPundit(q, selectedPersona, selectedLanguage, selectedPlayerId, club)
+            }
           />
         </section>
       </div>
@@ -277,6 +281,7 @@ export default function BroadcastControlDeckPage() {
         selectedPersona={selectedPersona}
         selectedLanguage={selectedLanguage}
         onFetchRecap={fetchRecap}
+        onReplayScenario={injectScenario}
         onSpeakText={(text, lang) => speakText(text, lang, true)}
       />
 
@@ -284,6 +289,7 @@ export default function BroadcastControlDeckPage() {
       <VisionInspectorModal
         isOpen={isVisionOpen}
         onClose={() => setIsVisionOpen(false)}
+        onIngestAutoEvent={ingestCustomEvent}
       />
 
       {/* 6. Custom Synthetic Telemetry JSON Ingest & Verifier Lab Modal */}
