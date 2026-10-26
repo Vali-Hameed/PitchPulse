@@ -27,9 +27,10 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
   onDismiss,
 }) => {
   const [visible, setVisible] = useState<boolean>(false);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (overlay) {
+    if (overlay && !dismissedIds.has(overlay.overlay_id)) {
       setVisible(true);
       const timer = setTimeout(() => {
         setVisible(false);
@@ -38,7 +39,7 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
     } else {
       setVisible(false);
     }
-  }, [overlay?.overlay_id]);
+  }, [overlay?.overlay_id, dismissedIds]);
 
   if (!overlay || !visible) return null;
 
@@ -178,6 +179,9 @@ export const BroadcastOverlay: React.FC<BroadcastOverlayProps> = ({
 
           <button
             onClick={() => {
+              if (overlay) {
+                setDismissedIds((prev) => new Set(prev).add(overlay.overlay_id));
+              }
               setVisible(false);
               onDismiss?.();
             }}

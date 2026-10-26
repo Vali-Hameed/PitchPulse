@@ -100,9 +100,6 @@ export function useMatchStream() {
               ...prev,
               match_clock: tick.match_clock,
             }));
-            if (tick.active_overlay) {
-              setActiveOverlay(tick.active_overlay);
-            }
           } catch (err) {
             console.error("Failed to parse tick", err);
           }

@@ -34,6 +34,7 @@ export default function BroadcastControlDeckPage() {
     ingestCustomEvent,
     askStudioPundit,
     fetchRecap,
+    setActiveOverlay,
   } = useMatchStream();
 
   const [selectedPersona, setSelectedPersona] = useState<PersonaMode>("analyst");
