@@ -203,6 +203,16 @@ class CustomEventIngestRequest(BaseModel):
     )
 
 
+class StudioAskRequest(BaseModel):
+    """Interactive studio pundit tactical question payload."""
+
+    question: str = Field(..., min_length=2, max_length=320)
+    persona: Literal["analyst", "casual", "player_focus"] = "analyst"
+    lang: Literal["en", "es", "ar", "ko", "fr", "pt", "de"] = "en"
+    player_id: Optional[str] = "NLR-8"
+    club: Literal["ALL", "NLR", "MSB"] = "ALL"
+
+
 class ScoreState(BaseModel):
     """Scoreboard state."""
 
@@ -220,6 +230,7 @@ class RecapBullet(BaseModel):
     text: str
     event_id: int
     tag: str
+    scenario_id: Optional[str] = None
 
 
 class RecapResponse(BaseModel):

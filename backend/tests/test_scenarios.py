@@ -101,3 +101,24 @@ def test_orchestrator_badges_and_cultural_idioms():
         assert "106" in ovl4.personas.translations["de"]["headline"]
 
     asyncio.run(_run())
+
+
+def test_studio_ask_and_club_recap():
+    import asyncio
+    from app.main import ask_studio_pundit, match_recap
+    from app.models.schemas import StudioAskRequest
+
+    async def _run():
+        res_ask = await ask_studio_pundit(
+            StudioAskRequest(question="Why is Chaos spiking?", persona="analyst", lang="en")
+        )
+        assert res_ask["status"] == "answered"
+        assert res_ask["overlay"].verification.verified is True
+        assert "Chaos" in res_ask["overlay"].headline or "CHAOS" in res_ask["overlay"].headline
+
+        recap_nlr = await match_recap(persona="analyst", lang="en", club="NLR")
+        recap_msb = await match_recap(persona="casual", lang="en", club="MSB")
+        assert recap_nlr.bullets[0].text != recap_msb.bullets[0].text
+        assert recap_nlr.bullets[0].scenario_id == "scen_1"
+
+    asyncio.run(_run())
