@@ -202,45 +202,119 @@ export const VisionInspectorModal: React.FC<VisionInspectorModalProps> = ({
           const width = canvas.width;
           const height = canvas.height;
 
-          // Pitch perspective gradient (Obsidian Slate Turf)
-          const pitchGrad = ctx.createLinearGradient(0, 0, 0, height);
-          pitchGrad.addColorStop(0, "#06130C");
-          pitchGrad.addColorStop(0.5, "#0A1D13");
-          pitchGrad.addColorStop(1, "#05110B");
-          ctx.fillStyle = pitchGrad;
+          // 1. Dark Tactical Slate-Turf (Obsidian Emerald Radial Gradient matching main 2D pitch)
+          const grad = ctx.createRadialGradient(
+            width / 2,
+            height / 2,
+            width * 0.08,
+            width / 2,
+            height / 2,
+            width * 0.65
+          );
+          grad.addColorStop(0, "#0A1B14");
+          grad.addColorStop(0.6, "#07140F");
+          grad.addColorStop(1, "#050F0B");
+          ctx.fillStyle = grad;
           ctx.fillRect(0, 0, width, height);
 
-          // Perspective pitch striping
+          // Calibrated Pitch Dimensions inside camera viewport (matching YOLO homography mapping)
+          const pitchLeft = width * 0.09;
+          const pitchTop = height * 0.13;
+          const pitchWidth = width * 0.82;
+          const pitchHeight = height * 0.74;
+
+          const toPitchX = (mx: number) => pitchLeft + (mx / 105.0) * pitchWidth;
+          const toPitchY = (my: number) => pitchTop + (my / 68.0) * pitchHeight;
+          const scalePitchX = pitchWidth / 105.0;
+          const scalePitchY = pitchHeight / 68.0;
+
+          // Tonal mowing bands across pitch area (16 vertical stripes)
+          const stripeCount = 16;
+          const stripeW = pitchWidth / stripeCount;
+          ctx.fillStyle = "rgba(255, 255, 255, 0.015)";
+          for (let s = 1; s < stripeCount; s += 2) {
+            ctx.fillRect(pitchLeft + s * stripeW, pitchTop, stripeW, pitchHeight);
+          }
+
+          // Complete FIFA Pitch Geometry (Hairline Precision matching main 2D pitch)
           ctx.save();
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
-          ctx.lineWidth = 1;
-          for (let i = 0; i < 14; i++) {
-            const y = (height / 14) * i;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-          }
-
-          // Perspective vertical guidelines
-          for (let i = 0; i <= 10; i++) {
-            const topX = (width / 10) * i * 0.8 + width * 0.1;
-            const botX = (width / 10) * i;
-            ctx.beginPath();
-            ctx.moveTo(topX, 0);
-            ctx.lineTo(botX, height);
-            ctx.stroke();
-          }
-
-          // Center Circle Perspective
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
           ctx.lineWidth = 1.25;
+
+          // Outer Pitch Boundary
+          ctx.strokeRect(toPitchX(0), toPitchY(0), toPitchX(105) - toPitchX(0), toPitchY(68) - toPitchY(0));
+
+          // Halfway Line
           ctx.beginPath();
-          ctx.ellipse(width / 2, height / 2, width * 0.12, height * 0.16, 0, 0, Math.PI * 2);
+          ctx.moveTo(toPitchX(52.5), toPitchY(0));
+          ctx.lineTo(toPitchX(52.5), toPitchY(68));
           ctx.stroke();
 
+          // Center Circle & Spot
+          ctx.beginPath();
+          ctx.arc(toPitchX(52.5), toPitchY(34.0), 9.15 * scalePitchX, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(toPitchX(52.5), toPitchY(34.0), 2.0, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+          ctx.fill();
+
+          // Home Penalty Box (16.5m), Goal Area (5.5m), Penalty Spot (11m) & D-Arc (Left / NLR)
+          ctx.strokeRect(toPitchX(0), toPitchY(13.84), 16.5 * scalePitchX, 40.32 * scalePitchY);
+          ctx.strokeRect(toPitchX(0), toPitchY(24.84), 5.5 * scalePitchX, 18.32 * scalePitchY);
+          ctx.beginPath();
+          ctx.arc(toPitchX(11.0), toPitchY(34.0), 2.0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(toPitchX(11.0), toPitchY(34.0), 9.15 * scalePitchX, -0.927, 0.927);
+          ctx.stroke();
+
+          // Home Goal Net Frame (7.32m)
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+          ctx.strokeRect(toPitchX(0) - 2.0 * scalePitchX, toPitchY(30.34), 2.0 * scalePitchX, 7.32 * scalePitchY);
+
+          // Away Penalty Box (16.5m), Goal Area (5.5m), Penalty Spot (11m) & D-Arc (Right / MSB)
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+          ctx.strokeRect(toPitchX(105.0 - 16.5), toPitchY(13.84), 16.5 * scalePitchX, 40.32 * scalePitchY);
+          ctx.strokeRect(toPitchX(105.0 - 5.5), toPitchY(24.84), 5.5 * scalePitchX, 18.32 * scalePitchY);
+          ctx.beginPath();
+          ctx.arc(toPitchX(105.0 - 11.0), toPitchY(34.0), 2.0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(toPitchX(105.0 - 11.0), toPitchY(34.0), 9.15 * scalePitchX, Math.PI - 0.927, Math.PI + 0.927);
+          ctx.stroke();
+
+          // Away Goal Net Frame (7.32m)
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+          ctx.strokeRect(toPitchX(105.0), toPitchY(30.34), 2.0 * scalePitchX, 7.32 * scalePitchY);
+
+          // 4 Corner Arcs (1m radius)
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+          const cornerR = 1.0 * scalePitchX;
+          // Top-Left (0, 0)
+          ctx.beginPath();
+          ctx.arc(toPitchX(0), toPitchY(0), cornerR, 0, Math.PI / 2);
+          ctx.stroke();
+          // Bottom-Left (0, 68)
+          ctx.beginPath();
+          ctx.arc(toPitchX(0), toPitchY(68), cornerR, -Math.PI / 2, 0);
+          ctx.stroke();
+          // Top-Right (105, 0)
+          ctx.beginPath();
+          ctx.arc(toPitchX(105), toPitchY(0), cornerR, Math.PI / 2, Math.PI);
+          ctx.stroke();
+          // Bottom-Right (105, 68)
+          ctx.beginPath();
+          ctx.arc(toPitchX(105), toPitchY(68), cornerR, Math.PI, Math.PI * 1.5);
+          ctx.stroke();
+
+          ctx.restore();
+
           // Camera Crosshair Center
-          ctx.strokeStyle = "rgba(229, 193, 88, 0.3)";
+          ctx.strokeStyle = "rgba(229, 193, 88, 0.35)";
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(width / 2 - 16, height / 2);
