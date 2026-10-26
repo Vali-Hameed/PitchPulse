@@ -476,3 +476,4 @@ export const PitchTelestrator: React.FC<PitchTelestratorProps> = ({
     </div>
   );
 };
+
