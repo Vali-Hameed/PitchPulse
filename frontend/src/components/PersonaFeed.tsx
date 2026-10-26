@@ -65,7 +65,13 @@ export const PersonaFeed: React.FC<PersonaFeedProps> = ({
     if (!trimmed || !onAskPundit || isAsking) return;
     setIsAsking(true);
     try {
-      await onAskPundit(trimmed, clubLens);
+      const resOverlay = await onAskPundit(trimmed, clubLens);
+      if (resOverlay && onSpeakText) {
+        const trans = resOverlay.personas?.translations || {};
+        const langPack = trans[selectedLanguage] || trans["en"] || {};
+        const spoken = langPack[selectedPersona] || resOverlay.headline;
+        onSpeakText(spoken, selectedLanguage);
+      }
       setQuestionInput("");
     } finally {
       setIsAsking(false);
@@ -288,9 +294,15 @@ export const PersonaFeed: React.FC<PersonaFeedProps> = ({
                       <span className="text-[10px] font-mono font-bold text-studio-gold bg-white/[0.04] border border-white/10 px-1.5 py-0.5 rounded tabular-nums">
                         {ovl.match_clock}
                       </span>
-                      <span className="text-[9px] font-mono uppercase text-zinc-400 font-semibold tracking-wider">
-                        {ovl.overlay_type.replace(/_/g, " ")}
-                      </span>
+                      {ovl.overlay_id.startsWith("qa_") ? (
+                        <span className="text-[9px] font-mono uppercase bg-studio-gold text-black font-extrabold px-1.5 py-0.5 rounded tracking-wider shadow-sm">
+                          STUDIO Q&A
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-mono uppercase text-zinc-400 font-semibold tracking-wider">
+                          {ovl.overlay_type.replace(/_/g, " ")}
+                        </span>
+                      )}
                     </div>
 
                     {isCorrected ? (

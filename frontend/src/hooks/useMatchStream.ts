@@ -229,18 +229,34 @@ export function useMatchStream() {
       club: "ALL" | "NLR" | "MSB" = "ALL"
     ): Promise<BroadcastOverlayPayload | null> => {
       try {
-        const res = await fetch(`${API_BASE}/api/studio/ask`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question,
-            persona,
-            lang,
-            player_id: playerId || "NLR-8",
-            club,
-          }),
-        });
-        if (res.ok) {
+        const payload = {
+          question,
+          persona,
+          lang,
+          player_id: playerId || "NLR-8",
+          club,
+        };
+
+        let res: Response | null = null;
+        try {
+          res = await fetch("/api/studio/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+        } catch {
+          res = null;
+        }
+
+        if (!res || !res.ok) {
+          res = await fetch(`${API_BASE}/api/studio/ask`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+        }
+
+        if (res && res.ok) {
           const data = await res.json();
           if (data.overlay) {
             setActiveOverlay(data.overlay);
